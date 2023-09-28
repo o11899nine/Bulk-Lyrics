@@ -7,9 +7,6 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-import time
-
-start_time = time.time()
 
 
 
@@ -17,8 +14,8 @@ def main():
     driver = setup_driver()
 
     # song_title = input("Enter song information: ")
-    song_title = "Oceans Hillsong"
-    url = f"https://google.com/search?q={song_title} lyrics"
+    song_info = input("Enter song info: ")
+    url = f"https://google.com/search?q={song_info} lyrics"
     driver.get(url)
     cookie_button = driver.find_element(By.ID, "L2AGLb")
     cookie_button.click()
