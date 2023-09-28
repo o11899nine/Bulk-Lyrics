@@ -8,11 +8,15 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
+from docx import Document
+
+
+
 
 
 def main():
-    song_info = input("Enter song info: ")
-    url = f"https://google.com/search?q={song_info} lyrics"
+    song = input("Enter song info: ")
+    url = f"https://google.com/search?q={song} lyrics"
     driver = setup_driver()
     driver.get(url)
     cookie_button = driver.find_element(By.ID, "L2AGLb")
@@ -21,12 +25,21 @@ def main():
     html = driver.page_source
     soup = BeautifulSoup(html, "lxml")
 
-    lyrics = soup.find_all("div", {"jsname": "U8S5sf"})
-    print_lyrics(lyrics)
+    song_title = soup.find("div", {"data-attrid": "title"}).text
+    song_artist = soup.find("div", {"data-attrid": "subtitle"}).text
+    song_lyrics = soup.find_all("div", {"jsname": "U8S5sf"})
+
+    document = Document()
+    document.add_paragraph(song_title)
+    document.add_paragraph(song_artist)
+    # document.add_paragraph(song_lyrics)
+    document.save("test.docx")
+
+    # print_lyrics(song_lyrics)
 
 def setup_driver():
     options = Options()
-    options.page_load_strategy='eager'
+    options.page_load_strategy="eager"
     options.add_argument("--headless")
     options.add_experimental_option("excludeSwitches", ["enable-logging"])
     return webdriver.Chrome(options=options)
