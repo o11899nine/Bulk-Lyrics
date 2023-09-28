@@ -11,11 +11,9 @@ from selenium.webdriver.chrome.options import Options
 
 
 def main():
-    driver = setup_driver()
-
-    # song_title = input("Enter song information: ")
     song_info = input("Enter song info: ")
     url = f"https://google.com/search?q={song_info} lyrics"
+    driver = setup_driver()
     driver.get(url)
     cookie_button = driver.find_element(By.ID, "L2AGLb")
     cookie_button.click()
@@ -44,4 +42,3 @@ def print_lyrics(lyrics):
 
 if __name__ == "__main__":
     main()
-    print("--- %s seconds ---" % (time.time() - start_time))
