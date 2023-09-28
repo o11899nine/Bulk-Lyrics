@@ -1,7 +1,4 @@
-import logging
-# logging.basicConfig(
-#     level=logging.DEBUG, format=" %(asctime)s -  %(levelname)s -  %(message)s"
-# )
+#TODO: Marges smal
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -10,52 +7,82 @@ from selenium.webdriver.chrome.options import Options
 
 from docx import Document
 import os
+import pyperclip
 
 
+import time
 
 
 
 def main():
-    song = input("Enter song info: ")
-    url = f"https://google.com/search?q={song} lyrics"
+    os.system('cls')
+    print('Loading. Please wait.')
     driver = setup_driver()
-    driver.get(url)
+    document = Document()
+
+    songlist = list(pyperclip.paste().replace('\r','').split('\n'))
+    os.system('cls')
+
+    for song in songlist:
+        print(song)
+    
+    confirmation = input('\nIs this songlist correct Y/N?').upper()
+    if confirmation == 'N':
+        quit()
+
+    os.system('cls')
+    print('Creating document. Please wait.')
+    
+    for song in songlist:
+        driver.get(f"https://google.com/search?q={song} lyrics")
+
+        accept_cookies(driver)
+
+        html = driver.page_source
+        soup = BeautifulSoup(html, "lxml")
+        
+        add_song_info(soup, document)
+        add_song_lyrics(soup, document)
+
+        if song != songlist[-1]:
+            document.add_page_break()
+
+    document.save("test.docx")
+    os.system('start test.docx')
+
+def accept_cookies(driver):
     try:
         cookie_button = driver.find_element(By.ID, "L2AGLb")
         cookie_button.click()
     except:
-        pass
+        return
 
-    html = driver.page_source
-    soup = BeautifulSoup(html, "lxml")
+def add_song_info(soup, doc):
+    song_title = soup.find("div", {"data-attrid": "title"})
+    song_artist = soup.find("div", {"data-attrid": "subtitle"})
+    doc.add_heading(song_title.text)
+    doc.add_paragraph().add_run(song_artist.text).bold=True
 
-    song_title = soup.find("div", {"data-attrid": "title"}).text
-    song_artist = soup.find("div", {"data-attrid": "subtitle"}).text
+
+def add_song_lyrics(soup, doc):
     song_lyrics = soup.find_all("div", {"jsname": "U8S5sf"})
 
-    document = Document()
-    document.add_heading(song_title)
-    document.add_heading(song_artist, 2)
-    lyrics_to_doc(song_lyrics, document)
-    document.save("test.docx")
-    os.system('start test.docx')
+    for paragraph in song_lyrics:
+        p = doc.add_paragraph()
+        lines = paragraph.find_all("span", {"jsname": "YS01Ge"})
+        for line in lines:
+            p.add_run(line.text)
+            if line != lines[-1]:
+                p.add_run('\n')
 
 
 def setup_driver():
     options = Options()
-    #TODO: Compare load times with different load strategies
     options.page_load_strategy="eager"
     options.add_argument("--headless")
     options.add_experimental_option("excludeSwitches", ["enable-logging"])
     return webdriver.Chrome(options=options)
 
-
-def lyrics_to_doc(lyrics, document):
-    for paragraph in lyrics:
-        lines = paragraph.find_all("span", {"jsname": "YS01Ge"})
-        for line in lines:
-            document.add_paragraph(line.text)
-
-
 if __name__ == "__main__":
     main()
+    
