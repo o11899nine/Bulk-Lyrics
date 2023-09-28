@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
 from docx import Document
+import os
 
 
 
@@ -30,12 +31,13 @@ def main():
     song_lyrics = soup.find_all("div", {"jsname": "U8S5sf"})
 
     document = Document()
-    document.add_paragraph(song_title)
-    document.add_paragraph(song_artist)
+    document.add_heading(song_title)
+    document.add_heading(song_artist, 2)
     # document.add_paragraph(song_lyrics)
+    print_lyrics(song_lyrics, document)
     document.save("test.docx")
+    os.system('start test.docx')
 
-    # print_lyrics(song_lyrics)
 
 def setup_driver():
     options = Options()
@@ -45,12 +47,11 @@ def setup_driver():
     return webdriver.Chrome(options=options)
 
 
-def print_lyrics(lyrics):
+def print_lyrics(lyrics, document):
     for paragraph in lyrics:
         lines = paragraph.find_all("span", {"jsname": "YS01Ge"})
         for line in lines:
-            print(line.text)
-        print()
+            document.add_paragraph(line)
 
 
 if __name__ == "__main__":
