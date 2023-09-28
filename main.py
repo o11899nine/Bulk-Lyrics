@@ -9,30 +9,32 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import time
 
-
+start_time = time.time()
 
 
 
 def main():
     driver = setup_driver()
 
-    song_title = input("Enter song information: ")
+    # song_title = input("Enter song information: ")
+    song_title = "Oceans Hillsong"
     url = f"https://google.com/search?q={song_title} lyrics"
     driver.get(url)
     cookie_button = driver.find_element(By.ID, "L2AGLb")
     cookie_button.click()
 
     html = driver.page_source
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "lxml")
 
     lyrics = soup.find_all("div", {"jsname": "U8S5sf"})
     print_lyrics(lyrics)
 
 def setup_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
-    return webdriver.Chrome(options=chrome_options)
+    options = Options()
+    options.page_load_strategy='eager'
+    options.add_argument("--headless")
+    options.add_experimental_option("excludeSwitches", ["enable-logging"])
+    return webdriver.Chrome(options=options)
 
 
 def print_lyrics(lyrics):
@@ -45,3 +47,4 @@ def print_lyrics(lyrics):
 
 if __name__ == "__main__":
     main()
+    print("--- %s seconds ---" % (time.time() - start_time))
