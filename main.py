@@ -20,8 +20,11 @@ def main():
     url = f"https://google.com/search?q={song} lyrics"
     driver = setup_driver()
     driver.get(url)
-    cookie_button = driver.find_element(By.ID, "L2AGLb")
-    cookie_button.click()
+    try:
+        cookie_button = driver.find_element(By.ID, "L2AGLb")
+        cookie_button.click()
+    except:
+        pass
 
     html = driver.page_source
     soup = BeautifulSoup(html, "lxml")
@@ -34,7 +37,7 @@ def main():
     document.add_heading(song_title)
     document.add_heading(song_artist, 2)
     # document.add_paragraph(song_lyrics)
-    print_lyrics(song_lyrics, document)
+    lyrics_to_doc(song_lyrics, document)
     document.save("test.docx")
     os.system('start test.docx')
 
@@ -47,7 +50,7 @@ def setup_driver():
     return webdriver.Chrome(options=options)
 
 
-def print_lyrics(lyrics, document):
+def lyrics_to_doc(lyrics, document):
     for paragraph in lyrics:
         lines = paragraph.find_all("span", {"jsname": "YS01Ge"})
         for line in lines:
