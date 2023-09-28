@@ -36,7 +36,6 @@ def main():
     document = Document()
     document.add_heading(song_title)
     document.add_heading(song_artist, 2)
-    # document.add_paragraph(song_lyrics)
     lyrics_to_doc(song_lyrics, document)
     document.save("test.docx")
     os.system('start test.docx')
@@ -54,7 +53,7 @@ def lyrics_to_doc(lyrics, document):
     for paragraph in lyrics:
         lines = paragraph.find_all("span", {"jsname": "YS01Ge"})
         for line in lines:
-            document.add_paragraph(line)
+            document.add_paragraph(line.text)
 
 
 if __name__ == "__main__":
