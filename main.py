@@ -43,6 +43,7 @@ def main():
 
 def setup_driver():
     options = Options()
+    #TODO: Compare load times with different load strategies
     options.page_load_strategy="eager"
     options.add_argument("--headless")
     options.add_experimental_option("excludeSwitches", ["enable-logging"])
