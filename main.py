@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup, ResultSet
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-
+import re
 from docx import Document
 import pyperclip
 
@@ -65,8 +65,18 @@ def get_song_data(user_song: str, soup: BeautifulSoup) -> dict:
     else:
         title: str = soup.find("div", {"data-attrid": "title"}).text
         artist: str = soup.find("div", {"data-attrid": "subtitle"}).text
+        artist = delete_extra_text(artist)
 
     return {"title": title, "artist": artist, "lyrics": lyrics}
+
+def delete_extra_text(artist: str) -> str:
+    """Deletes the words 'Song by' before the artist. Then returns the artist"""
+    # Google displays the artist as "Song by Artist", so the second uppercase
+    # letter is the start of the artist's name. The code below finds the index
+    # of that second uppercase letter and then removes all text before it
+    m = re.search(r'^([^A-Z]*[A-Z]){2}', artist)
+    idx = m.span()[1]-1
+    return artist[idx:]
 
 
 def add_song_to_doc(data: dict, doc) -> None:
