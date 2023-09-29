@@ -25,7 +25,9 @@ import settings
 # TODO: Margin bovenaan eerste heading
 # TODO: Refactor more
 # TODO: Browser compatibility
+# TODO: consistent naming
 # TODO: Tkinter GUI
+# TODO: comments, docstrings
 
 
 def main() -> None:
