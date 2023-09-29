@@ -7,12 +7,12 @@
 # hit for that song's lyrics is saved and displayed to the user later.
 
 # User input might look something like this:
-    # mardy bum arctic monkeys
-    # everlong foo fighters
-    # bohemian rhapsody
+# mardy bum arctic monkeys
+# everlong foo fighters
+# bohemian rhapsody
 
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, ResultSet
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -27,70 +27,98 @@ import pyperclip
 # TODO: Song niet gevonden: save link to first hit, show links
 # TODO: "liedje vna" weg
 
-def main():
-    songlist = get_songlist()
+def main() -> None:
+    songlist: list = get_songlist()
 
     print("Setting up...")
     driver = initiate_driver()
     document = Document()
 
-    for song in songlist:
-        print(f"Fetching info for {song}")
-        soup = fetch_song_soup(song, driver)
+    for user_song in songlist:
+        print(f"Fetching info for {user_song}")
+        soup: BeautifulSoup = fetch_song_soup(user_song, driver)
+        song_data: dict = get_song_data(user_song, soup)
 
-        add_song_to_doc(soup, document, song)
+        add_song_to_doc(song_data, document)
 
-        if song != songlist[-1]:
+        if user_song != songlist[-1]:
             document.add_page_break()
 
-    filename = input("Enter filename: ")
+    filename: str = input("Enter filename: ")
     document.save(f"testdocs/{filename}.docx")
-    print(f"Finished Document saved as {filename}.docx")
+    print(f"Saved all lyrics in {filename}.docx")
 
-def add_song_to_doc(soup, document, song):
-    lyrics = soup.find_all("div", {"jsname": "U8S5sf"})
+
+def get_song_data(user_song: str, soup: BeautifulSoup) -> dict:
+    '''
+    Finds a song's title, artist and lyrics in the song's BeautifulSoup,
+    If a song's lyrics are not found, the user's input is used for the song's title
+    '''
+
+    lyrics: ResultSet = soup.find_all("div", {"jsname": "U8S5sf"})
+
     if len(lyrics) == 0:
-        print("Lyrics not found")
-        add_song_not_found(song, document)
+        title: str = user_song
+        artist: bool = False
+        lyrics: bool = False
+        
     else:
-        print(f"Lyrics found")
-        add_song_info(soup, document)
-        add_song_lyrics(soup, document)
+        title: str = soup.find("div", {"data-attrid": "title"}).text
+        artist: str = soup.find("div", {"data-attrid": "subtitle"}).text
 
-def add_song_not_found(song, doc):
-    """Adds user song info and 'not found' text to the document"""
-    doc.add_heading(song.title())
-    doc.add_paragraph().add_run("Lyrics not found")
+    return {"title": title, "artist": artist, "lyrics": lyrics}
 
-def fetch_song_soup(song, driver):
+
+def add_song_to_doc(data: dict, doc) -> None:
+    """Adds a song's title, artist and lyrics to the document"""
+
+    doc.add_heading(data["title"].title())
+    if data["artist"]:
+        doc.add_paragraph().add_run(data["artist"]).bold = True
+
+    if data["lyrics"]:
+        for paragraph in data["lyrics"]:
+            p = doc.add_paragraph()
+            lines: ResultSet = paragraph.find_all("span", {"jsname": "YS01Ge"})
+            for line in lines:
+                p.add_run(line.text)
+                if line != lines[-1]:
+                    p.add_run("\n")
+    else:
+        doc.add_paragraph().add_run("Lyrics Not Found")
+
+
+def fetch_song_soup(song: str, driver) -> BeautifulSoup:
     """
     Searches Google for the song lyrics and returns a BeautifulSoup of
     the search results page.
     """
     driver.get(f"https://google.com/search?q={song} lyrics")
     accept_cookies(driver)
-    html = driver.page_source
-    soup = BeautifulSoup(html, "lxml")
-    print(type(soup))
-    return soup
+    html: str = driver.page_source
+    return BeautifulSoup(html, "lxml")
 
-def get_songlist():
+
+def get_songlist() -> list:
     """
     Gets a list of songs from the user, 
     asks for confirmation and returns the songlist
     """
-    songlist = list(pyperclip.paste().replace("\r", "").split("\n"))
+    songlist: list = pyperclip.paste().replace("\r", "").split("\n")
+    # Remove empty strings
+    songlist = [song for song in songlist if song]
 
     for song in songlist:
         print(song)
-    
-    confirmation = input("\nPress Enter to continue or type Q to quit.").upper()
-    if confirmation == "Q":
+
+    confirmation = input("Press Enter to continue or type Q to quit.")
+    if confirmation.upper() == "Q":
         quit()
 
     return songlist
 
-def accept_cookies(driver):
+
+def accept_cookies(driver) -> None:
     """Clicks on Google's 'accept cookies' button"""
     try:
         cookie_button = driver.find_element(By.ID, "L2AGLb")
@@ -98,35 +126,15 @@ def accept_cookies(driver):
     except:
         return
 
-def add_song_info(soup, doc):
-    """Adds a song's title and artist to the document"""
 
-    song_title = soup.find("div", {"data-attrid": "title"})
-    song_artist = soup.find("div", {"data-attrid": "subtitle"})
-    doc.add_heading(song_title.text)
-    doc.add_paragraph().add_run(song_artist.text).bold=True
-
-
-def add_song_lyrics(soup, doc):
-    """Add a song's lyrics to the document"""
-    song_lyrics = soup.find_all("div", {"jsname": "U8S5sf"})
-
-    for paragraph in song_lyrics:
-        p = doc.add_paragraph()
-        lines = paragraph.find_all("span", {"jsname": "YS01Ge"})
-        for line in lines:
-            p.add_run(line.text)
-            if line != lines[-1]:
-                p.add_run("\n")
-
-
-def initiate_driver():
+def initiate_driver() -> webdriver.Chrome:
     """Sets up and returns the Selenium Chrome webdriver"""
     options = Options()
-    options.page_load_strategy="eager"
+    options.page_load_strategy = "eager"
     options.add_argument("--headless")
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])
     return webdriver.Chrome(options=options)
+
 
 if __name__ == "__main__":
     main()
-    
