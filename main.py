@@ -30,6 +30,7 @@ import settings
 
 def main() -> None:
     songlist: list = get_songlist()
+    filename: str = input("Enter filename: ")
 
     print("Loading...")
     driver = settings.initiate_driver()
@@ -40,20 +41,19 @@ def main() -> None:
     for user_song in songlist:
         print(f"Fetching data for {user_song}")
         soup: BeautifulSoup = fetch_song_soup(user_song, driver)
-        song_data: dict = get_song_data(user_song, soup)
+        song_data: dict = extract_song_data(user_song, soup)
 
         add_song_to_doc(song_data, document)
 
         if user_song != songlist[-1]:
             document.add_page_break()
 
-    filename: str = input("Enter filename: ")
     document.save(f"testdocs/{filename}.docx")
     print(f"Saved all lyrics in {filename}.docx")
     os.system(f'start testdocs/{filename}.docx')
 
 
-def get_song_data(user_song: str, soup: BeautifulSoup) -> dict:
+def extract_song_data(user_song: str, soup: BeautifulSoup) -> dict:
     '''
     Finds a song's title, artist and lyrics in the song's BeautifulSoup and 
     returns a dict with that info. If a song's lyrics are not found, the user's 
@@ -133,8 +133,6 @@ def get_songlist() -> list:
     songlist: list = pyperclip.paste().replace("\r", "").split("\n")
     # Remove empty strings
     songlist = [song for song in songlist if song]
-    for song in songlist:
-        print(song)
 
     return songlist
 
