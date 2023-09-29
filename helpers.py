@@ -1,4 +1,14 @@
 import docx
+from selenium.webdriver.common.by import By
+
+
+def accept_cookies(driver) -> None:
+    """Clicks on Google's 'accept cookies' button if it pops up"""
+    try:
+        cookie_button = driver.find_element(By.ID, "L2AGLb")
+        cookie_button.click()
+    except:
+        return
 
 def add_hyperlink(paragraph, text: str, url: str):
     """
