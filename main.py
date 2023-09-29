@@ -26,6 +26,8 @@ import settings
 # TODO: Refactor more
 # TODO: Browser compatibility
 # TODO: consistent naming
+# TODO: readme
+# TODO: Op GitHub als CLI program (MWDD account)
 # TODO: Tkinter GUI
 # TODO: comments, docstrings
 
@@ -40,14 +42,14 @@ def main() -> None:
 
     settings.format_document(document)
 
-    for user_song in songlist:
-        print(f"Fetching data for {user_song}")
-        soup: BeautifulSoup = fetch_song_soup(user_song, driver)
-        song_data: dict = extract_song_data(user_song, soup)
+    for song in songlist:
+        print(f"Fetching data for {song}")
+        soup: BeautifulSoup = fetch_song_soup(song, driver)
+        song_data: dict = extract_song_data(song, soup)
 
         add_song_to_doc(song_data, document)
 
-        if user_song != songlist[-1]:
+        if song != songlist[-1]:
             document.add_page_break()
 
     document.save(f"testdocs/{filename}.docx")
@@ -55,7 +57,7 @@ def main() -> None:
     os.system(f'start testdocs/{filename}.docx')
 
 
-def extract_song_data(user_song: str, soup: BeautifulSoup) -> dict:
+def extract_song_data(song: str, soup: BeautifulSoup) -> dict:
     '''
     Finds a song's title, artist and lyrics in the song's BeautifulSoup and 
     returns a dict with that info. If a song's lyrics are not found, the user's 
@@ -66,14 +68,14 @@ def extract_song_data(user_song: str, soup: BeautifulSoup) -> dict:
     lyrics: ResultSet = soup.find_all("div", {"jsname": "U8S5sf"})
 
     if len(lyrics) == 0:
-        title = user_song
+        title = song
         artist = False
         lyrics = False
-
     else:
         title: str = soup.find("div", {"data-attrid": "title"}).text
         artist: str = soup.find("div", {"data-attrid": "subtitle"}).text
         artist = delete_extra_text(artist)
+
     try:
         first_google_hit = soup.find("a", {"jsname": "UWckNb"})["href"]
     except:
@@ -92,28 +94,28 @@ def delete_extra_text(artist: str) -> str:
     return artist[idx:]
 
 
-def add_song_to_doc(data: dict, doc) -> None:
+def add_song_to_doc(song_data: dict, document) -> None:
     """Adds a song's title, artist and lyrics to the document"""
 
-    doc.add_heading(data["title"].title())
+    document.add_heading(song_data["title"].title())
 
-    if data["artist"]:
-        doc.add_paragraph(data["artist"].title(), style="Subtitle")
+    if song_data["artist"]:
+        document.add_paragraph(song_data["artist"].title(), style="Subtitle")
 
-    if data["lyrics"]:
-        for paragraph in data["lyrics"]:
+    if song_data["lyrics"]:
+        for paragraph in song_data["lyrics"]:
             lines: ResultSet = paragraph.find_all("span", {"jsname": "YS01Ge"})
-            p = doc.add_paragraph()
+            p = document.add_paragraph()
             for line in lines:
                 p.add_run(line.text)
                 if line != lines[-1]:
                     p.add_run("\n")
     else:
-        doc.add_paragraph().add_run("Lyrics Not Found").font.color.rgb = RGBColor(255, 0, 0)
-        if data["link"]:
-            p = doc.add_paragraph()
+        document.add_paragraph().add_run("Lyrics Not Found").font.color.rgb = RGBColor(255, 0, 0)
+        if song_data["link"]:
+            p = document.add_paragraph()
             p.add_run(f"Try here: ")
-            helpers.add_hyperlink(p, data["link"], data["link"])
+            helpers.add_hyperlink(p, song_data["link"], song_data["link"])
 
 
 def fetch_song_soup(song: str, driver) -> BeautifulSoup:

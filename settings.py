@@ -11,13 +11,13 @@ def initiate_driver() -> webdriver.Chrome:
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     return webdriver.Chrome(options=options)
 
-def format_document(doc):
+def format_document(document):
 
-    section = doc.sections[0]
+    section = document.sections[0]
 
     # Footer
     footer = section.footer
-    style = doc.styles['Normal']
+    style = document.styles['Normal']
     font = style.font
 
     p = footer.add_paragraph()
@@ -29,7 +29,7 @@ def format_document(doc):
     run.font.color.rgb = RGBColor(120, 120, 120)
 
     # Margins
-    sections = doc.sections
+    sections = document.sections
     for section in sections:
         section.top_margin = Cm(1.27)
         section.bottom_margin = Cm(1.27)
@@ -37,7 +37,7 @@ def format_document(doc):
         section.right_margin = Cm(1.27)
 
     # Lyrics font
-    style = doc.styles['Normal']
+    style = document.styles['Normal']
     font = style.font
     font.name = 'Arial'
     font.size = Pt(12)
