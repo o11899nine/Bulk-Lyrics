@@ -110,7 +110,7 @@ def add_song_to_doc(data: dict, doc) -> None:
         doc.add_paragraph().add_run("Lyrics Not Found").font.color.rgb = RGBColor(255, 0, 0)
         if data["link"]:
             p = doc.add_paragraph()
-            p.add_run(f"Try here:")
+            p.add_run(f"Try here: ")
             helpers.add_hyperlink(p, data["link"], data["link"])
 
 
