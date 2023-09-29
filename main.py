@@ -69,20 +69,27 @@ def extract_song_data(song: str, soup: BeautifulSoup) -> dict:
     lyrics: ResultSet = soup.find_all("div", {"jsname": "U8S5sf"})
 
     if len(lyrics) == 0:
-        title = song
-        artist = False
-        lyrics = False
+        title: str = song
+        artist: bool = False
+        lyrics: bool = False
     else:
         title: str = soup.find("div", {"data-attrid": "title"}).text
         artist: str = soup.find("div", {"data-attrid": "subtitle"}).text
         artist = delete_extra_text(artist)
 
     try:
-        first_google_hit = soup.find("a", {"jsname": "UWckNb"})["href"]
+        first_google_hit: str = soup.find("a", {"jsname": "UWckNb"})["href"]
     except:
-        first_google_hit = False
+        first_google_hit: bool = False
 
-    return {"title": title, "artist": artist, "lyrics": lyrics, "link": first_google_hit}
+    song_data: dict = {
+        "title": title,
+        "artist": artist,
+        "lyrics": lyrics,
+        "link": first_google_hit
+    }
+
+    return song_data
 
 
 def delete_extra_text(artist: str) -> str:
@@ -112,7 +119,9 @@ def add_song_to_doc(song_data: dict, document) -> None:
                 if line != lines[-1]:
                     p.add_run("\n")
     else:
-        document.add_paragraph().add_run("Lyrics Not Found").font.color.rgb = RGBColor(255, 0, 0)
+        document.add_paragraph().add_run(
+            "Lyrics Not Found").font.color.rgb = RGBColor(255, 0, 0)
+
         if song_data["link"]:
             p = document.add_paragraph()
             p.add_run(f"Try here: ")

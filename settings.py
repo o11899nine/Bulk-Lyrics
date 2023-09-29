@@ -11,7 +11,7 @@ def initiate_driver() -> webdriver.Chrome:
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     return webdriver.Chrome(options=options)
 
-def format_document(document):
+def format_document(document) -> None:
 
     section = document.sections[0]
 
