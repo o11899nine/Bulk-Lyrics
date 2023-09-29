@@ -24,6 +24,7 @@ import settings
 
 # TODO: Margin bovenaan eerste heading
 # TODO: Refactor more
+# TODO: Show list of lyrics not found
 # TODO: Browser compatibility
 # TODO: consistent naming
 # TODO: readme
