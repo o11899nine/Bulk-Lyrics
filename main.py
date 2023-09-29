@@ -73,13 +73,14 @@ def add_song_to_doc(data: dict, doc) -> None:
     """Adds a song's title, artist and lyrics to the document"""
 
     doc.add_heading(data["title"].title())
+
     if data["artist"]:
         doc.add_paragraph().add_run(data["artist"]).bold = True
 
     if data["lyrics"]:
         for paragraph in data["lyrics"]:
-            p = doc.add_paragraph()
             lines: ResultSet = paragraph.find_all("span", {"jsname": "YS01Ge"})
+            p = doc.add_paragraph()
             for line in lines:
                 p.add_run(line.text)
                 if line != lines[-1]:
@@ -90,7 +91,7 @@ def add_song_to_doc(data: dict, doc) -> None:
 
 def fetch_song_soup(song: str, driver) -> BeautifulSoup:
     """
-    Searches Google for the song lyrics and returns a BeautifulSoup of
+    Searches Google for a song's lyrics and returns a BeautifulSoup of
     the search results page.
     """
     driver.get(f"https://google.com/search?q={song} lyrics")
@@ -119,7 +120,7 @@ def get_songlist() -> list:
 
 
 def accept_cookies(driver) -> None:
-    """Clicks on Google's 'accept cookies' button"""
+    """Clicks on Google's 'accept cookies' button if it pops up"""
     try:
         cookie_button = driver.find_element(By.ID, "L2AGLb")
         cookie_button.click()
