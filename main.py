@@ -17,8 +17,11 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import re
+import os
 from docx import Document
-from docx.shared import RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.shared import RGBColor, Cm, Pt
 import pyperclip
 from docx_hyperlinks import add_hyperlink
 
@@ -30,9 +33,13 @@ from docx_hyperlinks import add_hyperlink
 def main() -> None:
     songlist: list = get_songlist()
 
-    print("Setting up...")
+    print("Loading...")
     driver = initiate_driver()
     document = Document()
+
+
+    format_document(document)
+
 
     for user_song in songlist:
         print(f"Fetching data for {user_song}")
@@ -44,11 +51,42 @@ def main() -> None:
         if user_song != songlist[-1]:
             document.add_page_break()
 
-    filename: str = input("Enter filename: ")
+    filename: str = input("Enter filename: ")      
     document.save(f"testdocs/{filename}.docx")
     print(f"Saved all lyrics in {filename}.docx")
+    os.system(f'start testdocs/{filename}.docx')
 
+def format_document(doc):
 
+    section = doc.sections[0]
+    
+    # Footer
+    footer = section.footer
+    style = doc.styles['Normal']
+    font = style.font
+
+    p = footer.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    run = p.add_run("Bulk Lyrics by MW Digital Development")
+    run.font.name = 'Arial'
+    run.font.size = Pt(10) 
+    run.font.color.rgb = RGBColor(120, 120, 120)
+
+    # Margins
+    sections = doc.sections
+    for section in sections:
+        section.top_margin = Cm(1.27)
+        section.bottom_margin = Cm(1.27)
+        section.left_margin = Cm(1.27)
+        section.right_margin = Cm(1.27)
+
+    # Lyrics font
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = 'Arial'
+    font.size = Pt(12)
+    
 def get_song_data(user_song: str, soup: BeautifulSoup) -> dict:
     '''
     Finds a song's title, artist and lyrics in the song's BeautifulSoup and 
@@ -68,8 +106,10 @@ def get_song_data(user_song: str, soup: BeautifulSoup) -> dict:
         title: str = soup.find("div", {"data-attrid": "title"}).text
         artist: str = soup.find("div", {"data-attrid": "subtitle"}).text
         artist = delete_extra_text(artist)
-
-    first_google_hit = soup.find("a", {"jsname": "UWckNb"})["href"]
+    try:
+        first_google_hit = soup.find("a", {"jsname": "UWckNb"})["href"]
+    except:
+        first_google_hit = False
 
     return {"title": title, "artist": artist, "lyrics": lyrics, "link": first_google_hit}
 
@@ -90,7 +130,7 @@ def add_song_to_doc(data: dict, doc) -> None:
     doc.add_heading(data["title"].title())
 
     if data["artist"]:
-        doc.add_paragraph().add_run(data["artist"]).bold = True
+        doc.add_paragraph(data["artist"].title(), style="Subtitle")
 
     if data["lyrics"]:
         for paragraph in data["lyrics"]:
@@ -102,10 +142,11 @@ def add_song_to_doc(data: dict, doc) -> None:
                     p.add_run("\n")
     else:
         doc.add_paragraph().add_run("Lyrics Not Found").font.color.rgb = RGBColor(255, 0, 0)
-        p = doc.add_paragraph()
-        p.add_run(f"You might find them here:")
-        p.add_run("\n")
-        add_hyperlink(p, data["link"], data["link"])
+        if data["link"]:
+            p = doc.add_paragraph()
+            p.add_run(f"You might find them here:")
+            p.add_run("\n")
+            add_hyperlink(p, data["link"], data["link"])
 
 
 def fetch_song_soup(song: str, driver) -> BeautifulSoup:
@@ -127,13 +168,8 @@ def get_songlist() -> list:
     songlist: list = pyperclip.paste().replace("\r", "").split("\n")
     # Remove empty strings
     songlist = [song for song in songlist if song]
-
     for song in songlist:
         print(song)
-
-    confirmation = input("Press Enter to continue or type Q to quit.")
-    if confirmation.upper() == "Q":
-        quit()
 
     return songlist
 
