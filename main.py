@@ -39,20 +39,15 @@ class GUI():
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Bulk Lyrics")
-        self.root.geometry("700x500")
-
-
+        self.root.geometry("960x720")
 
         self.songs_textbox = tk.Text(self.root, height=20, width=50, font=("TkDefaultFont", 12))
         self.songs_textbox.pack(pady=30)
         self.songs_textbox.bind("<Tab>", self.focus_next_widget)
 
-        self.frame = tk.Frame(self.root)
-        self.frame.pack()
-
-        self.filename_entry = tk.Entry(self.frame, font=("TkDefaultFont", 12))
-        self.filename_entry.pack(side="left")
-        self.filename_entry.bind("<Tab>", self.focus_next_widget)
+        self.directory_btn = tk.Button(self.root, text="Choose directory", command=self.choose_dir)
+        self.directory_btn.pack()
+        self.directory_btn.bind("<Return>", self.choose_dir)
 
         self.generate_btn = tk.Button(self.root, text="Generate document", command=self.generate_document)
         self.generate_btn.pack()
@@ -61,27 +56,39 @@ class GUI():
         self.info_text = StringVar()
         self.info_display = tk.Label(self.root, textvariable=self.info_text)
         self.info_display.pack()
+
+
+        self.file = None
+
         self.root.mainloop()
     
-      
+    def choose_dir(self, *event):
+        files = [('Word-document', '*.docx')]
+        self.file = filedialog.asksaveasfile(filetypes = files, defaultextension = files).name
+
     def focus_next_widget(self, event):
         event.widget.tk_focusNext().focus()
         return("break")
 
     def generate_document(self, *event):
+        if self.file == None:
+            self.info_text.set("First choose a file directory")
+            self.root.update()
+            return
+
         self.info_text.set("Loading...")
         self.root.update()
         songlist: list = self.get_songlist()
-        # TODO: write a get_filename function. Strip whitespace,\n \r etc
-        files = [('Word-document', '*.docx')]
-        file = filedialog.asksaveasfile(filetypes = files, defaultextension = files).name
+        file = self.file
 
         driver = settings.initiate_driver()
         document = Document()
 
         settings.format_document(document)
-
-        song_percentage: float = 100 / len(songlist)
+        try:
+            song_percentage: float = 100 / len(songlist)
+        except ZeroDivisionError:
+            print("Work on denying empty input!")
         percent_done: int = 0
 
         for song in songlist:
