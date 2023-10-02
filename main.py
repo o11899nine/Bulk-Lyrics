@@ -22,11 +22,9 @@ import helpers
 import settings
 
 
-# TODO: Margin bovenaan eerste heading
-# TODO: Refactor more
-# TODO: Show list of lyrics not found
 # TODO: Browser compatibility
 # TODO: consistent naming
+# TODO: Check if filename exists
 # TODO: readme
 # TODO: Op GitHub als CLI program (MWDD account)
 # TODO: Tkinter GUI
@@ -43,10 +41,15 @@ def main() -> None:
 
     settings.format_document(document)
 
+    songs_not_found: list = []
     for song in songlist:
         print(f"Fetching data for {song}")
         soup: BeautifulSoup = fetch_song_soup(song, driver)
         song_data: dict = extract_song_data(song, soup)
+
+        if song_data["lyrics"] == False:
+            songs_not_found.append(song)
+
 
         add_song_to_doc(song_data, document)
 
@@ -54,8 +57,17 @@ def main() -> None:
             document.add_page_break()
 
     document.save(f"testdocs/{filename}.docx")
-    print(f"Saved all lyrics in {filename}.docx")
+
+    warn_not_found(songs_not_found)
+   
+    print(f"Saved lyrics in {filename}.docx")
     os.system(f'start testdocs/{filename}.docx')
+
+def warn_not_found(songs_not_found: list) -> None:
+    if len(songs_not_found) != 0:
+        print("Lyrics not found for:")
+        for song in songs_not_found:
+            print(f"- {song}")
 
 
 def extract_song_data(song: str, soup: BeautifulSoup) -> dict:
@@ -145,8 +157,8 @@ def get_songlist() -> list:
     asks for confirmation and returns the songlist
     """
     songlist: list = pyperclip.paste().replace("\r", "").split("\n")
-    # Remove empty strings
-    songlist = [song for song in songlist if song]
+    # Remove redundant spaces and empty strings
+    songlist = [re.sub(' +', ' ', song).strip() for song in songlist if song]
 
     return songlist
 
