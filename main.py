@@ -20,48 +20,54 @@ from docx.shared import RGBColor
 from bs4 import BeautifulSoup, ResultSet
 
 import helpers
-from tqdm import tqdm
 import settings
 
 
-# TODO: Margin bovenaan eerste heading
 # TODO: Refactor more
+# TODO: Add cancel option
+# TODO: Add icon, title, subtitle, instructions
 # TODO: get rid of all the selfs
-# TODO: Show list of lyrics not found
 # TODO: Browser compatibility
 # TODO: consistent naming
 # TODO: readme
-# TODO: require input
 # TODO: comments, docstrings
 
 
-class GUI:
+class Application():
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Bulk Lyrics")
         self.root.geometry("960x720")
 
-        self.songs_textbox = tk.Text(self.root, height=20, width=50, font=("TkDefaultFont", 12))
-        self.songs_textbox.bind("<Tab>", self.focus_next_widget)
-        self.songs_textbox.pack()
+        self.textbox = tk.Text(
+            self.root, height=20, width=50, font=("TkDefaultFont", 12)
+        )
+        self.textbox.bind("<Tab>", self.focus_next_widget)
+        self.textbox.pack(pady=10)
 
-        self.directory_btn = tk.Button(self.root, text="Choose directory", command=self.choose_dir)
-        self.directory_btn.bind("<Return>", self.choose_dir)
-        self.directory_btn.pack()
+        directory_btn = tk.Button(
+            self.root, text="Choose directory", command=self.choose_dir
+        )
+        directory_btn.bind("<Return>", self.choose_dir)
+        directory_btn.pack()
 
         self.directory_text = StringVar()
-        self.directory_text.set("No directory chosen")
-        self.directory_display = tk.Label(self.root, textvariable=self.directory_text)
-        self.directory_display.pack()
+        self.directory_text.set("No directory chosen.")
 
-        self.generate_btn = tk.Button(self.root, text="Generate document", command=self.generate_document)
-        self.generate_btn.bind("<Return>", self.generate_document)
-        self.generate_btn.pack()
-        
+        directory_display = tk.Label(self.root, textvariable=self.directory_text)
+        directory_display.pack()
+
+        generate_btn = tk.Button(
+            self.root, text="Generate document", command=self.generate_document
+        )
+        generate_btn.bind("<Return>", self.generate_document)
+        generate_btn.pack(pady=(10,0))
+
         self.status_text = StringVar()
-        self.status_display = tk.Label(self.root, textvariable=self.status_text)
-        self.status_display.pack()
-        
+
+        status_display = tk.Label(self.root, textvariable=self.status_text)
+        status_display.pack()
+
         self.filepath = None
 
         self.root.mainloop()
@@ -69,9 +75,7 @@ class GUI:
     def choose_dir(self, *event):
         filetypes = [("Word-document", "*.docx")]
         path = filedialog.asksaveasfile(
-            filetypes=filetypes, 
-            defaultextension=filetypes, 
-            initialfile="Bulk Lyrics"
+            filetypes=filetypes, defaultextension=filetypes, initialfile="Bulk Lyrics"
         )
         self.filepath = path.name
         self.directory_text.set(self.filepath)
@@ -81,19 +85,17 @@ class GUI:
         return "break"
 
     def generate_document(self, *event):
-
-        if self.songs_textbox.get("1.0", tk.END) == "\n":
+        if self.textbox.get("1.0", tk.END) == "\n":
             messagebox.showwarning(
                 title="No Songs", message="Please enter song information."
             )
             return
-        
+
         if not self.filepath:
             messagebox.showwarning(
                 title="No Directory", message="Please choose a save location."
             )
             return
-
 
         self.status_text.set("Loading...")
         self.root.update()
@@ -103,15 +105,11 @@ class GUI:
         document = Document()
 
         settings.format_document(document)
-        try:
-            song_percentage: float = 100 / len(songlist)
-        except ZeroDivisionError:
-            print("Work on denying empty input!")
+       
+        song_percentage: float = 100 / len(songlist)
         percent_done: int = 0
 
-     
-
-        for idx, song in tqdm(enumerate(songlist)):
+        for idx, song in enumerate(songlist):
             self.status_text.set(f"{round(percent_done)}% completed.\n{song}")
             self.root.update()
             soup: BeautifulSoup = self.fetch_song_soup(song, driver)
@@ -122,7 +120,6 @@ class GUI:
             if idx != len(songlist) - 1:
                 document.add_page_break()
             percent_done += song_percentage
-        
 
         self.status_text.set(f"100% completed.")
         self.root.update()
@@ -132,7 +129,7 @@ class GUI:
             message=f"Document finished.\nDo you wish to open it right now?",
         )
         if open_file:
-            os.system(f"start {self.filepath}")
+            os.system('"' + self.filepath + '"')
 
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
         """
@@ -167,6 +164,7 @@ class GUI:
 
         return song_data
 
+
     def delete_extra_text(self, artist: str) -> str:
         """Deletes the words 'Song by' before the artist. Then returns the artist"""
         # Google displays the artist as "Song by Artist", so the second uppercase
@@ -179,6 +177,7 @@ class GUI:
             return "Unknown Artist"
 
         return artist[idx:]
+
 
     def add_song_to_doc(self, song_data: dict, document) -> None:
         """Adds a song's title, artist and lyrics to the document"""
@@ -206,6 +205,7 @@ class GUI:
                 p.add_run(f"Try here: ")
                 helpers.add_hyperlink(p, song_data["link"], song_data["link"])
 
+
     def fetch_song_soup(self, song: str, driver) -> BeautifulSoup:
         """
         Searches Google for a song's lyrics and returns a BeautifulSoup of
@@ -216,12 +216,13 @@ class GUI:
         html: str = driver.page_source
         return BeautifulSoup(html, "lxml")
 
+
     def get_songlist(self) -> list:
         """
         Gets a list of songs from the user,
         asks for confirmation and returns the songlist
         """
-        songlist: str = self.songs_textbox.get("1.0", tk.END)
+        songlist: str = self.textbox.get("1.0", tk.END)
         songlist: list = songlist.replace("\r", "").split("\n")
         # Remove redundant spaces and empty strings
         songlist = [re.sub(" +", " ", song).strip() for song in songlist if song]
@@ -230,4 +231,4 @@ class GUI:
 
 
 if __name__ == "__main__":
-    GUI()
+    Application()
