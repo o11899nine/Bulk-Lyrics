@@ -74,9 +74,15 @@ class Application():
 
     def choose_dir(self, *event):
         filetypes = [("Word-document", "*.docx")]
-        path = filedialog.asksaveasfile(
-            filetypes=filetypes, defaultextension=filetypes, initialfile="Bulk Lyrics"
-        )
+        try:
+            path = filedialog.asksaveasfile(
+                filetypes=filetypes, defaultextension=filetypes, initialfile="Bulk Lyrics"
+            )
+        except PermissionError:
+            messagebox.showwarning(
+                title="Access Denied", message="Access denied.\nClose the document if it's open and try again."
+            )
+            self.choose_dir()
         self.filepath = path.name
         self.directory_text.set(self.filepath)
 
@@ -223,7 +229,7 @@ class Application():
         asks for confirmation and returns the songlist
         """
         songlist: str = self.textbox.get("1.0", tk.END)
-        songlist: list = songlist.replace("\r", "").split("\n")
+        songlist: list = songlist.replace("\r", "").replace('"', "").split("\n")
         # Remove redundant spaces and empty strings
         songlist = [re.sub(" +", " ", song).strip() for song in songlist if song]
 
