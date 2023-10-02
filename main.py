@@ -61,25 +61,6 @@ class GUI:
 
         self.songs_textbox = tk.Text(frame_songlist, height=20, width=50, font=("TkDefaultFont", 12))
         self.songs_textbox.bind("<Tab>", self.focus_next_widget)
-        self.songs_textbox.pack()
-
-        self.step1_title = tk.Label(frame_instructions, text="Step 1: Input song information.", anchor="w", justify="left", font=font_heading)
-        self.step1_title.pack()
-        
-        self.step1_instructions = tk.Label(frame_instructions, text="Put each song on a new line. \nFor each song, enter the song title.\nAdd the artist to improve the results.", anchor="w", justify="left", font=font_normal)
-        self.step1_instructions.pack()
-
-
-        frame_directory = tk.Frame(frame_instructions,bg="red")
-        frame_directory.pack(side="left", pady=20)
-        
-        self.step2_title = tk.Label(frame_directory, text="Step 2: Choose directory.", anchor="w", justify="left", font=font_heading)
-        self.step2_title.pack()
-
-        self.directory_text = StringVar()
-        self.directory_text.set("No directory chosen")
-        self.directory_display = tk.Label(frame_directory, textvariable=self.directory_text)
-        self.directory_display.pack()
 
         self.directory_btn = tk.Button(
             frame_instructions, text="Choose directory", command=self.choose_dir
@@ -93,9 +74,9 @@ class GUI:
         self.step3_title = tk.Label(frame_generate, text="Step 3: Generate document.", anchor="w", justify="left", font=font_heading)
         self.step3_title.pack()
 
-        # self.status_text = StringVar()
-        # self.status_display = tk.Label(frame_generate, textvariable=self.status_text)
-        # self.status_display.pack()
+        self.info_text = StringVar()
+        self.info_display = tk.Label(self.root, textvariable=self.info_text)
+        self.info_display.pack()
 
 
         # self.generate_btn = tk.Button(
@@ -129,7 +110,7 @@ class GUI:
             )
             return
 
-        self.status_text.set("Loading...")
+        self.info_text.set("Loading...")
         self.root.update()
         songlist: list = self.get_songlist()
 
@@ -155,7 +136,7 @@ class GUI:
                 document.add_page_break()
             percent_done += song_percentage
 
-        self.status_text.set(f"100% completed.")
+        self.info_text.set(f"100% completed.")
         self.root.update()
         document.save(self.filepath)
         open_file = messagebox.askyesno(
