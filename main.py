@@ -41,49 +41,27 @@ class GUI:
         self.root.title("Bulk Lyrics")
         self.root.geometry("960x720")
 
-        font_normal = "Arial 12"
-        font_heading = "Arial 12 bold"
-
-        app_title = tk.Label(self.root, text="Bulk Lyrics", font=("", 28))
-        app_title.pack()
-
-        app_subtitle = tk.Label(self.root, text="By MW Digital Development", font=("", 12))
-        app_subtitle.pack()
-
-        frame_main = tk.Frame(self.root,bg="black")
-        frame_main.pack()
-
-        frame_songlist = tk.Frame(frame_main,bg="white")
-        frame_instructions = tk.Frame(frame_main,bg="blue")
-
-        frame_songlist.pack(side="left", pady=20)
-        frame_instructions.pack(side="right", pady=20)
-
-        self.songs_textbox = tk.Text(frame_songlist, height=20, width=50, font=("TkDefaultFont", 12))
+        self.songs_textbox = tk.Text(self.root, height=20, width=50, font=("TkDefaultFont", 12))
         self.songs_textbox.bind("<Tab>", self.focus_next_widget)
+        self.songs_textbox.pack()
 
-        self.directory_btn = tk.Button(
-            frame_instructions, text="Choose directory", command=self.choose_dir
-        )
+        self.directory_btn = tk.Button(self.root, text="Choose directory", command=self.choose_dir)
         self.directory_btn.bind("<Return>", self.choose_dir)
-        self.directory_btn.pack(side="right")
+        self.directory_btn.pack()
+
+        self.directory_text = StringVar()
+        self.directory_text.set("No directory chosen")
+        self.directory_display = tk.Label(self.root, textvariable=self.directory_text)
+        self.directory_display.pack()
+
+
+        self.generate_btn = tk.Button(self.root, text="Generate document", command=self.generate_document)
+        self.generate_btn.bind("<Return>", self.generate_document)
+        self.generate_btn.pack()
         
-        frame_generate = tk.Frame(frame_instructions, bg="yellow")
-        frame_generate.pack()
-
-        self.step3_title = tk.Label(frame_generate, text="Step 3: Generate document.", anchor="w", justify="left", font=font_heading)
-        self.step3_title.pack()
-
-        self.info_text = StringVar()
-        self.info_display = tk.Label(self.root, textvariable=self.info_text)
-        self.info_display.pack()
-
-
-        # self.generate_btn = tk.Button(
-        #     frame_instructions, text="Generate document", command=self.generate_document
-        # )
-        # self.generate_btn.bind("<Return>", self.generate_document)
-        # self.generate_btn.pack(side="right")
+        self.status_text = StringVar()
+        self.status_display = tk.Label(self.root, textvariable=self.status_text)
+        self.status_display.pack()
         
         self.filepath = None
 
@@ -97,7 +75,7 @@ class GUI:
             initialfile="Bulk Lyrics"
         )
         self.filepath = path.name
-        self.directory_text.set(f"Directory: {self.filepath}")
+        self.directory_text.set(self.filepath)
 
     def focus_next_widget(self, event):
         event.widget.tk_focusNext().focus()
@@ -110,7 +88,7 @@ class GUI:
             )
             return
 
-        self.info_text.set("Loading...")
+        self.status_text.set("Loading...")
         self.root.update()
         songlist: list = self.get_songlist()
 
@@ -136,7 +114,7 @@ class GUI:
                 document.add_page_break()
             percent_done += song_percentage
 
-        self.info_text.set(f"100% completed.")
+        self.status_text.set(f"100% completed.")
         self.root.update()
         document.save(self.filepath)
         open_file = messagebox.askyesno(
