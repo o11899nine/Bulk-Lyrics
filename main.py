@@ -13,8 +13,8 @@
 import re
 import os
 
-import pyperclip
 import tkinter as tk
+from tkinter import messagebox, StringVar
 from docx import Document
 from docx.shared import RGBColor
 from bs4 import BeautifulSoup, ResultSet
@@ -33,27 +33,31 @@ import settings
 # TODO: Op GitHub als CLI program (MWDD account)
 # TODO: Tkinter GUI
 # TODO: comments, docstrings
-
+    
 class GUI():
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Bulk Lyrics")
         self.root.geometry("700x500")
-        self.songs_textbox = tk.Text(self.root, height=10)
+        self.songs_textbox = tk.Text(self.root, height=10, font=("TkDefaultFont", 12))
         self.songs_textbox.pack()
-        self.filename_textbox = tk.Text(self.root, height=1)
-        self.filename_textbox.pack()
+        self.filename_entry = tk.Entry(self.root)
+        self.filename_entry.pack()
         self.runBtn = tk.Button(self.root, text="Generate document", command=self.generate_document)
         self.runBtn.pack()
+        self.info_text = StringVar()
+        self.info_display = tk.Label(self.root, textvariable=self.info_text)
+        self.info_display.pack()
         self.root.mainloop()
     
 
     def generate_document(self) -> None:
+        self.info_text.set('Finding lyrics...')
+        self.root.update_idletasks()
         songlist: list = self.get_songlist()
         # TODO: write a get_filename function. Strip whitespace,\n \r etc
-        filename: str = self.filename_textbox.get("1.0", tk.END)
+        filename: str = self.filename_entry.get().replace("\n", "")
 
-        print("Loading...")
         driver = settings.initiate_driver()
         document = Document()
 
@@ -70,8 +74,12 @@ class GUI():
                 document.add_page_break()
 
         document.save(f"testdocs/{filename}.docx")
-        print(f"Saved all lyrics in {filename}.docx")
-        os.system(f'start testdocs/{filename}.docx')
+        open_file = messagebox.askyesno(
+            title="Finished", 
+            message=f"The document is saved as {filename}.docx.\nDo you wish to open it right now?"
+            )
+        if open_file:
+            os.system(f'start testdocs/{filename}.docx')
 
 
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
@@ -114,7 +122,11 @@ class GUI():
         # letter is the start of the artist's name. The code below finds the index
         # of that second uppercase letter and then removes all text before it
         m: re.Match = re.search(r'^([^A-Z]*[A-Z]){2}', artist)
-        idx: int = m.span()[1]-1
+        try:
+            idx: int = m.span()[1]-1
+        except:
+            return "Unknown Artist"
+    
         return artist[idx:]
 
 
