@@ -20,7 +20,7 @@ from docx.shared import RGBColor
 from bs4 import BeautifulSoup, ResultSet
 
 import helpers
-import gui
+from tqdm import tqdm
 import settings
 
 
@@ -54,7 +54,6 @@ class GUI:
         self.directory_display = tk.Label(self.root, textvariable=self.directory_text)
         self.directory_display.pack()
 
-
         self.generate_btn = tk.Button(self.root, text="Generate document", command=self.generate_document)
         self.generate_btn.bind("<Return>", self.generate_document)
         self.generate_btn.pack()
@@ -82,11 +81,19 @@ class GUI:
         return "break"
 
     def generate_document(self, *event):
-        if self.filepath == None:
+
+        if self.songs_textbox.get("1.0", tk.END) == "\n":
             messagebox.showwarning(
-                title="No directory chosen", message="Choose a directory first"
+                title="No Songs", message="Please enter song information."
             )
             return
+        
+        if not self.filepath:
+            messagebox.showwarning(
+                title="No Directory", message="Please choose a save location."
+            )
+            return
+
 
         self.status_text.set("Loading...")
         self.root.update()
@@ -102,7 +109,9 @@ class GUI:
             print("Work on denying empty input!")
         percent_done: int = 0
 
-        for idx, song in enumerate(songlist):
+     
+
+        for idx, song in tqdm(enumerate(songlist)):
             self.status_text.set(f"{round(percent_done)}% completed.\n{song}")
             self.root.update()
             soup: BeautifulSoup = self.fetch_song_soup(song, driver)
@@ -113,6 +122,7 @@ class GUI:
             if idx != len(songlist) - 1:
                 document.add_page_break()
             percent_done += song_percentage
+        
 
         self.status_text.set(f"100% completed.")
         self.root.update()
