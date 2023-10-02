@@ -14,11 +14,13 @@ import re
 import os
 
 import pyperclip
+import tkinter as tk
 from docx import Document
 from docx.shared import RGBColor
 from bs4 import BeautifulSoup, ResultSet
 
 import helpers
+import gui
 import settings
 
 
@@ -32,6 +34,7 @@ import settings
 
 
 def main() -> None:
+    gui.create_gui()
     songlist: list = get_songlist()
     filename: str = input("Enter filename: ")
 
@@ -163,5 +166,5 @@ def get_songlist() -> list:
     return songlist
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
