@@ -41,40 +41,68 @@ class GUI:
         self.root.title("Bulk Lyrics")
         self.root.geometry("960x720")
 
-        self.step1_title = tk.Label(self.root, text="Step 1: Input song information.")
-        self.step1_instruction = tk.Label(self.root, text="For each song, enter the song title and, if possible, the artist. Put each song on a new line.")
-        self.step2 = tk.Label(self.root, text="Step 2: Choose directory.")
-        self.step3 = tk.Label(self.root, text="Step 3: Generate document.")
+        font_normal = "Arial 12"
+        font_heading = "Arial 12 bold"
 
-        self.songs_textbox = tk.Text(self.root, height=20, width=50, font=("TkDefaultFont", 12))
+        app_title = tk.Label(self.root, text="Bulk Lyrics", font=("", 28))
+        app_title.pack()
+
+        app_subtitle = tk.Label(self.root, text="By MW Digital Development", font=("", 12))
+        app_subtitle.pack()
+
+        frame_main = tk.Frame(self.root,bg="black")
+        frame_main.pack()
+
+        frame_songlist = tk.Frame(frame_main,bg="white")
+        frame_instructions = tk.Frame(frame_main,bg="blue")
+
+        frame_songlist.pack(side="left", pady=20)
+        frame_instructions.pack(side="right", pady=20)
+
+        self.songs_textbox = tk.Text(frame_songlist, height=20, width=50, font=("TkDefaultFont", 12))
         self.songs_textbox.bind("<Tab>", self.focus_next_widget)
+        self.songs_textbox.pack()
+
+        self.step1_title = tk.Label(frame_instructions, text="Step 1: Input song information.", anchor="w", justify="left", font=font_heading)
+        self.step1_title.pack()
+        
+        self.step1_instructions = tk.Label(frame_instructions, text="Put each song on a new line. \nFor each song, enter the song title.\nAdd the artist to improve the results.", anchor="w", justify="left", font=font_normal)
+        self.step1_instructions.pack()
+
+
+        frame_directory = tk.Frame(frame_instructions,bg="red")
+        frame_directory.pack(side="left", pady=20)
+        
+        self.step2_title = tk.Label(frame_directory, text="Step 2: Choose directory.", anchor="w", justify="left", font=font_heading)
+        self.step2_title.pack()
 
         self.directory_text = StringVar()
-        self.directory_text.set("Step 2: Choose directory.")
-        self.directory_display = tk.Label(self.root, textvariable=self.directory_text)
+        self.directory_text.set("No directory chosen")
+        self.directory_display = tk.Label(frame_directory, textvariable=self.directory_text)
+        self.directory_display.pack()
 
         self.directory_btn = tk.Button(
-            self.root, text="Choose directory", command=self.choose_dir
+            frame_instructions, text="Choose directory", command=self.choose_dir
         )
         self.directory_btn.bind("<Return>", self.choose_dir)
+        self.directory_btn.pack(side="right")
+        
+        frame_generate = tk.Frame(frame_instructions, bg="yellow")
+        frame_generate.pack()
 
-        self.generate_btn = tk.Button(
-            self.root, text="Generate document", command=self.generate_document
-        )
-        self.generate_btn.bind("<Return>", self.generate_document)
+        self.step3_title = tk.Label(frame_generate, text="Step 3: Generate document.", anchor="w", justify="left", font=font_heading)
+        self.step3_title.pack()
 
-        self.status_text = StringVar()
-        self.status_display = tk.Label(self.root, textvariable=self.status_text)
+        # self.status_text = StringVar()
+        # self.status_display = tk.Label(frame_generate, textvariable=self.status_text)
+        # self.status_display.pack()
 
-        self.step1_title.grid(sticky="N", row = 0, column = 0)
-        self.step1_instruction.grid(sticky="N", row = 1, column = 0)
-        self.songs_textbox.grid(sticky="W", row = 0, column = 1)
-        self.step2.grid(sticky="W", row = 1, column = 0)
-        self.directory_btn.grid(sticky="W", row = 1, column = 1)
-        self.directory_display.grid(sticky="W", row = 1, column = 2)
-        self.step3.grid(sticky="W", row = 2, column = 0)
-        self.generate_btn.grid(sticky="W", row = 2, column = 1)
-        self.status_display.grid(sticky="W", row = 3, column = 0)
+
+        # self.generate_btn = tk.Button(
+        #     frame_instructions, text="Generate document", command=self.generate_document
+        # )
+        # self.generate_btn.bind("<Return>", self.generate_document)
+        # self.generate_btn.pack(side="right")
         
         self.filepath = None
 
