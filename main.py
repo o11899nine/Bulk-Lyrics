@@ -26,65 +26,84 @@ import settings
 
 # TODO: Margin bovenaan eerste heading
 # TODO: Refactor more
+# TODO: get rid of all the selfs
 # TODO: Show list of lyrics not found
 # TODO: Browser compatibility
 # TODO: consistent naming
 # TODO: readme
-# TODO: Op GitHub als CLI program (MWDD account)
-# TODO: Tkinter GUI
 # TODO: require input
 # TODO: comments, docstrings
-    
-class GUI():
+
+
+class GUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Bulk Lyrics")
         self.root.geometry("960x720")
 
+        self.step1_title = tk.Label(self.root, text="Step 1: Input song information.")
+        self.step1_instruction = tk.Label(self.root, text="For each song, enter the song title and, if possible, the artist. Put each song on a new line.")
+        self.step2 = tk.Label(self.root, text="Step 2: Choose directory.")
+        self.step3 = tk.Label(self.root, text="Step 3: Generate document.")
+
         self.songs_textbox = tk.Text(self.root, height=20, width=50, font=("TkDefaultFont", 12))
-        self.songs_textbox.pack(pady=30)
         self.songs_textbox.bind("<Tab>", self.focus_next_widget)
 
         self.directory_text = StringVar()
-        self.directory_text.set("Choose a directory.")
+        self.directory_text.set("Step 2: Choose directory.")
         self.directory_display = tk.Label(self.root, textvariable=self.directory_text)
-        self.directory_display.pack()
 
-        self.directory_btn = tk.Button(self.root, text="Choose directory", command=self.choose_dir)
-        self.directory_btn.pack()
+        self.directory_btn = tk.Button(
+            self.root, text="Choose directory", command=self.choose_dir
+        )
         self.directory_btn.bind("<Return>", self.choose_dir)
 
-        self.generate_btn = tk.Button(self.root, text="Generate document", command=self.generate_document)
-        self.generate_btn.pack()
+        self.generate_btn = tk.Button(
+            self.root, text="Generate document", command=self.generate_document
+        )
         self.generate_btn.bind("<Return>", self.generate_document)
 
         self.status_text = StringVar()
         self.status_display = tk.Label(self.root, textvariable=self.status_text)
-        self.status_display.pack()
 
-
-        self.file = None
+        self.step1_title.grid(sticky="N", row = 0, column = 0)
+        self.step1_instruction.grid(sticky="N", row = 1, column = 0)
+        self.songs_textbox.grid(sticky="W", row = 0, column = 1)
+        self.step2.grid(sticky="W", row = 1, column = 0)
+        self.directory_btn.grid(sticky="W", row = 1, column = 1)
+        self.directory_display.grid(sticky="W", row = 1, column = 2)
+        self.step3.grid(sticky="W", row = 2, column = 0)
+        self.generate_btn.grid(sticky="W", row = 2, column = 1)
+        self.status_display.grid(sticky="W", row = 3, column = 0)
+        
+        self.filepath = None
 
         self.root.mainloop()
-    
+
     def choose_dir(self, *event):
-        files = [('Word-document', '*.docx')]
-        self.file = filedialog.asksaveasfile(filetypes = files, defaultextension = files).name
-        self.directory_text.set(f"Directory: {self.file}")
+        filetypes = [("Word-document", "*.docx")]
+        path = filedialog.asksaveasfile(
+            filetypes=filetypes, 
+            defaultextension=filetypes, 
+            initialfile="Bulk Lyrics"
+        )
+        self.filepath = path.name
+        self.directory_text.set(f"Directory: {self.filepath}")
 
     def focus_next_widget(self, event):
         event.widget.tk_focusNext().focus()
-        return("break")
+        return "break"
 
     def generate_document(self, *event):
-        if self.file == None:
-            messagebox.showwarning(title="No directory chosen", message="Choose a directory first")
+        if self.filepath == None:
+            messagebox.showwarning(
+                title="No directory chosen", message="Choose a directory first"
+            )
             return
 
         self.status_text.set("Loading...")
         self.root.update()
         songlist: list = self.get_songlist()
-        file = self.file
 
         driver = settings.initiate_driver()
         document = Document()
@@ -96,8 +115,6 @@ class GUI():
             print("Work on denying empty input!")
         percent_done: int = 0
 
-        print(len(songlist))
-
         for idx, song in enumerate(songlist):
             self.status_text.set(f"{round(percent_done)}% completed.\n{song}")
             self.root.update()
@@ -105,29 +122,28 @@ class GUI():
             song_data: dict = self.extract_song_data(song, soup)
 
             self.add_song_to_doc(song_data, document)
-            print(idx)
-            if idx != len(songlist)-1:
+
+            if idx != len(songlist) - 1:
                 document.add_page_break()
             percent_done += song_percentage
 
         self.status_text.set(f"100% completed.")
         self.root.update()
-        document.save(file)
+        document.save(self.filepath)
         open_file = messagebox.askyesno(
-            title="Finished", 
-            message=f"Document finished.\nDo you wish to open it right now?"
-            )
+            title="Finished",
+            message=f"Document finished.\nDo you wish to open it right now?",
+        )
         if open_file:
-            os.system(f'start {file}')
-
+            os.system(f"start {self.filepath}")
 
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
-        '''
-        Finds a song's title, artist and lyrics in the song's BeautifulSoup and 
-        returns a dict with that info. If a song's lyrics are not found, the user's 
-        input is used for the song's title and google's first hit for the song's 
+        """
+        Finds a song's title, artist and lyrics in the song's BeautifulSoup and
+        returns a dict with that info. If a song's lyrics are not found, the user's
+        input is used for the song's title and google's first hit for the song's
         lyrics is stored in the dict
-        '''
+        """
 
         lyrics: ResultSet = soup.find_all("div", {"jsname": "U8S5sf"})
 
@@ -149,25 +165,23 @@ class GUI():
             "title": title,
             "artist": artist,
             "lyrics": lyrics,
-            "link": first_google_hit
+            "link": first_google_hit,
         }
 
         return song_data
-
 
     def delete_extra_text(self, artist: str) -> str:
         """Deletes the words 'Song by' before the artist. Then returns the artist"""
         # Google displays the artist as "Song by Artist", so the second uppercase
         # letter is the start of the artist's name. The code below finds the index
         # of that second uppercase letter and then removes all text before it
-        m: re.Match = re.search(r'^([^A-Z]*[A-Z]){2}', artist)
+        m: re.Match = re.search(r"^([^A-Z]*[A-Z]){2}", artist)
         try:
-            idx: int = m.span()[1]-1
+            idx: int = m.span()[1] - 1
         except:
             return "Unknown Artist"
-    
-        return artist[idx:]
 
+        return artist[idx:]
 
     def add_song_to_doc(self, song_data: dict, document) -> None:
         """Adds a song's title, artist and lyrics to the document"""
@@ -187,13 +201,13 @@ class GUI():
                         p.add_run("\n")
         else:
             document.add_paragraph().add_run(
-                "Lyrics Not Found").font.color.rgb = RGBColor(255, 0, 0)
+                "Lyrics Not Found"
+            ).font.color.rgb = RGBColor(255, 0, 0)
 
             if song_data["link"]:
                 p = document.add_paragraph()
                 p.add_run(f"Try here: ")
                 helpers.add_hyperlink(p, song_data["link"], song_data["link"])
-
 
     def fetch_song_soup(self, song: str, driver) -> BeautifulSoup:
         """
@@ -205,20 +219,18 @@ class GUI():
         html: str = driver.page_source
         return BeautifulSoup(html, "lxml")
 
-
     def get_songlist(self) -> list:
         """
-        Gets a list of songs from the user, 
+        Gets a list of songs from the user,
         asks for confirmation and returns the songlist
         """
         songlist: str = self.songs_textbox.get("1.0", tk.END)
         songlist: list = songlist.replace("\r", "").split("\n")
         # Remove redundant spaces and empty strings
-        songlist = [re.sub(' +', ' ', song).strip() for song in songlist if song]
+        songlist = [re.sub(" +", " ", song).strip() for song in songlist if song]
 
         return songlist
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     GUI()
