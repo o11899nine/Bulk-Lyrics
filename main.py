@@ -14,7 +14,7 @@ import re
 import os
 
 import tkinter as tk
-from tkinter import messagebox, StringVar
+from tkinter import messagebox, StringVar, filedialog
 from docx import Document
 from docx.shared import RGBColor
 from bs4 import BeautifulSoup, ResultSet
@@ -32,6 +32,7 @@ import settings
 # TODO: readme
 # TODO: Op GitHub als CLI program (MWDD account)
 # TODO: Tkinter GUI
+# TODO: require input
 # TODO: comments, docstrings
     
 class GUI():
@@ -39,32 +40,53 @@ class GUI():
         self.root = tk.Tk()
         self.root.title("Bulk Lyrics")
         self.root.geometry("700x500")
-        self.songs_textbox = tk.Text(self.root, height=10, font=("TkDefaultFont", 12))
-        self.songs_textbox.pack()
-        self.filename_entry = tk.Entry(self.root)
-        self.filename_entry.pack()
-        self.runBtn = tk.Button(self.root, text="Generate document", command=self.generate_document)
-        self.runBtn.pack()
+
+
+
+        self.songs_textbox = tk.Text(self.root, height=20, width=50, font=("TkDefaultFont", 12))
+        self.songs_textbox.pack(pady=30)
+        self.songs_textbox.bind("<Tab>", self.focus_next_widget)
+
+        self.frame = tk.Frame(self.root)
+        self.frame.pack()
+
+        self.filename_entry = tk.Entry(self.frame, font=("TkDefaultFont", 12))
+        self.filename_entry.pack(side="left")
+        self.filename_entry.bind("<Tab>", self.focus_next_widget)
+
+        self.generate_btn = tk.Button(self.root, text="Generate document", command=self.generate_document)
+        self.generate_btn.pack()
+        self.generate_btn.bind("<Return>", self.generate_document)
+
         self.info_text = StringVar()
         self.info_display = tk.Label(self.root, textvariable=self.info_text)
         self.info_display.pack()
         self.root.mainloop()
     
+      
+    def focus_next_widget(self, event):
+        event.widget.tk_focusNext().focus()
+        return("break")
 
-    def generate_document(self) -> None:
-        self.info_text.set('Finding lyrics...')
-        self.root.update_idletasks()
+    def generate_document(self, *event):
+        self.info_text.set("Loading...")
+        self.root.update()
         songlist: list = self.get_songlist()
         # TODO: write a get_filename function. Strip whitespace,\n \r etc
-        filename: str = self.filename_entry.get().replace("\n", "")
+        files = [('Word-document', '*.docx')]
+        file = filedialog.asksaveasfile(filetypes = files, defaultextension = files).name
 
         driver = settings.initiate_driver()
         document = Document()
 
         settings.format_document(document)
 
+        song_percentage: float = 100 / len(songlist)
+        percent_done: int = 0
+
         for song in songlist:
-            print(f"Fetching data for {song}")
+            self.info_text.set(f"{round(percent_done)}% completed.\n{song}")
+            self.root.update()
             soup: BeautifulSoup = self.fetch_song_soup(song, driver)
             song_data: dict = self.extract_song_data(song, soup)
 
@@ -72,14 +94,17 @@ class GUI():
 
             if song != songlist[-1]:
                 document.add_page_break()
+            percent_done += song_percentage
 
-        document.save(f"testdocs/{filename}.docx")
+        self.info_text.set(f"100% completed.")
+        self.root.update()
+        document.save(file)
         open_file = messagebox.askyesno(
             title="Finished", 
-            message=f"The document is saved as {filename}.docx.\nDo you wish to open it right now?"
+            message=f"Document finished.\nDo you wish to open it right now?"
             )
         if open_file:
-            os.system(f'start testdocs/{filename}.docx')
+            os.system(f'start {file}')
 
 
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
