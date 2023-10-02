@@ -33,7 +33,7 @@ import settings
 # TODO: comments, docstrings
 
 
-class Application():
+class Application:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Bulk Lyrics")
@@ -61,7 +61,7 @@ class Application():
             self.root, text="Generate document", command=self.generate_document
         )
         generate_btn.bind("<Return>", self.generate_document)
-        generate_btn.pack(pady=(10,0))
+        generate_btn.pack(pady=(10, 0))
 
         self.status_text = StringVar()
 
@@ -76,11 +76,14 @@ class Application():
         filetypes = [("Word-document", "*.docx")]
         try:
             path = filedialog.asksaveasfile(
-                filetypes=filetypes, defaultextension=filetypes, initialfile="Bulk Lyrics"
+                filetypes=filetypes,
+                defaultextension=filetypes,
+                initialfile="Bulk Lyrics",
             )
         except PermissionError:
             messagebox.showwarning(
-                title="Access Denied", message="Access denied.\nClose the document if it's open and try again."
+                title="Access Denied",
+                message="Access denied.\nClose the document if it's open and try again.",
             )
             self.choose_dir()
         self.filepath = path.name
@@ -111,7 +114,7 @@ class Application():
         document = Document()
 
         settings.format_document(document)
-       
+
         song_percentage: float = 100 / len(songlist)
         percent_done: int = 0
 
@@ -170,7 +173,6 @@ class Application():
 
         return song_data
 
-
     def delete_extra_text(self, artist: str) -> str:
         """Deletes the words 'Song by' before the artist. Then returns the artist"""
         # Google displays the artist as "Song by Artist", so the second uppercase
@@ -183,7 +185,6 @@ class Application():
             return "Unknown Artist"
 
         return artist[idx:]
-
 
     def add_song_to_doc(self, song_data: dict, document) -> None:
         """Adds a song's title, artist and lyrics to the document"""
@@ -211,7 +212,6 @@ class Application():
                 p.add_run(f"Try here: ")
                 helpers.add_hyperlink(p, song_data["link"], song_data["link"])
 
-
     def fetch_song_soup(self, song: str, driver) -> BeautifulSoup:
         """
         Searches Google for a song's lyrics and returns a BeautifulSoup of
@@ -221,7 +221,6 @@ class Application():
         helpers.accept_cookies(driver)
         html: str = driver.page_source
         return BeautifulSoup(html, "lxml")
-
 
     def get_songlist(self) -> list:
         """
