@@ -45,6 +45,11 @@ class GUI():
         self.songs_textbox.pack(pady=30)
         self.songs_textbox.bind("<Tab>", self.focus_next_widget)
 
+        self.directory_text = StringVar()
+        self.directory_text.set("Choose a directory.")
+        self.directory_display = tk.Label(self.root, textvariable=self.directory_text)
+        self.directory_display.pack()
+
         self.directory_btn = tk.Button(self.root, text="Choose directory", command=self.choose_dir)
         self.directory_btn.pack()
         self.directory_btn.bind("<Return>", self.choose_dir)
@@ -53,9 +58,9 @@ class GUI():
         self.generate_btn.pack()
         self.generate_btn.bind("<Return>", self.generate_document)
 
-        self.info_text = StringVar()
-        self.info_display = tk.Label(self.root, textvariable=self.info_text)
-        self.info_display.pack()
+        self.status_text = StringVar()
+        self.status_display = tk.Label(self.root, textvariable=self.status_text)
+        self.status_display.pack()
 
 
         self.file = None
@@ -65,6 +70,7 @@ class GUI():
     def choose_dir(self, *event):
         files = [('Word-document', '*.docx')]
         self.file = filedialog.asksaveasfile(filetypes = files, defaultextension = files).name
+        self.directory_text.set(f"Directory: {self.file}")
 
     def focus_next_widget(self, event):
         event.widget.tk_focusNext().focus()
@@ -72,11 +78,10 @@ class GUI():
 
     def generate_document(self, *event):
         if self.file == None:
-            self.info_text.set("First choose a file directory")
-            self.root.update()
+            messagebox.showwarning(title="No directory chosen", message="Choose a directory first")
             return
 
-        self.info_text.set("Loading...")
+        self.status_text.set("Loading...")
         self.root.update()
         songlist: list = self.get_songlist()
         file = self.file
@@ -91,19 +96,21 @@ class GUI():
             print("Work on denying empty input!")
         percent_done: int = 0
 
-        for song in songlist:
-            self.info_text.set(f"{round(percent_done)}% completed.\n{song}")
+        print(len(songlist))
+
+        for idx, song in enumerate(songlist):
+            self.status_text.set(f"{round(percent_done)}% completed.\n{song}")
             self.root.update()
             soup: BeautifulSoup = self.fetch_song_soup(song, driver)
             song_data: dict = self.extract_song_data(song, soup)
 
             self.add_song_to_doc(song_data, document)
-
-            if song != songlist[-1]:
+            print(idx)
+            if idx != len(songlist)-1:
                 document.add_page_break()
             percent_done += song_percentage
 
-        self.info_text.set(f"100% completed.")
+        self.status_text.set(f"100% completed.")
         self.root.update()
         document.save(file)
         open_file = messagebox.askyesno(
