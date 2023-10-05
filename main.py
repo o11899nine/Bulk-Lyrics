@@ -45,6 +45,8 @@ class Application:
             self.root, height=20, width=50, font=("TkDefaultFont", 12)
         )
         self.textbox.bind("<Tab>", self.focus_next_widget)
+        self.textbox.bind("<FocusIn>", self.delete_placeholder)
+        self.textbox.insert(1.0, "Everlong - Foo Fighters\nBohemian Rhapsody\nArctic Monkeys AM")
         self.textbox.pack()
 
         self.save_btn = tk.Button(
@@ -73,6 +75,9 @@ class Application:
 
         self.root.mainloop()
 
+    def delete_placeholder(self, *event):
+        self.textbox.delete(1.0, tk.END)
+        
     def cancel(self):
         self.running = False
         self.reset()
