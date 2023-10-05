@@ -2,7 +2,7 @@ import docx
 import os
 from tkinter import messagebox, filedialog
 
-def save_location():
+def choose_directory():
     filetypes = [("Word-document", "*.docx")]
     path = None
     try:
@@ -16,7 +16,7 @@ def save_location():
             title="Access Denied",
             message="Access denied.\nClose the document if it's open and try again.",
         )
-        save_location()
+        choose_directory()
     if path:
         return path.name
     else:

@@ -23,15 +23,12 @@ from songs import fetch_song_soup, extract_song_data
 import settings
 
 
-# TODO: Refactor more
 # TODO: Add icon, title, subtitle, instructions
-# TODO: get rid of all the selfs
 # TODO: Browser compatibility
-# TODO: consistent naming
 # TODO: readme
 # TODO: scrollbar
 # TODO: Fix issue where program crashes when file is opened
-# TODO: comments, docstrings
+# TODO: comments, docstrings, consistent naming
 
 
 class Application:
@@ -41,12 +38,12 @@ class Application:
         self.root.geometry("960x720")
 
         self.textbox = tk.Text(self.root, height=20, width=50, font=("TkDefaultFont", 12))
-        self.textbox.insert(1.0, "Everlong - Foo Fighters\nBohemian Rhapsody\nArctic Monkeys 505")
+        self.textbox.insert(1.0, "Nirvana - Smells Like Teen Spirit\nBohemian Rhapsody\nThe Beatles Hey Jude")
         self.textbox.bind("<Tab>", self.focus_next_widget)
         self.textbox.pack(pady=20)
 
-        self.generate_btn = tk.Button(self.root, text="Generate document", command=self.generate_document)
-        self.generate_btn.bind("<Return>", self.generate_document)
+        self.generate_btn = tk.Button(self.root, text="Generate document", command=self.main)
+        self.generate_btn.bind("<Return>", self.main)
         self.generate_btn.bind("<Tab>", self.focus_next_widget)
         self.generate_btn.pack()
 
@@ -63,52 +60,56 @@ class Application:
 
         self.root.mainloop()
 
-    def generate_document(self, *event):
+    def main(self, *event):
         self.running = True
 
-        if not self.check_for_input():
+        if not self.check_for_input(): 
             return
         
-        self.generate_btn.pack_forget()
+        self.show_run()
 
-        self.status_display.pack()
-        self.status_text.set("Loading...\n")
-        self.root.update()
-        self.cancel_btn.pack(pady=10)
-        
         self.setup_driver()
         self.setup_document()
 
-        doc_complete: bool = self.find_and_add_lyrics()            
+        doc_complete = self.generate_document()            
         
         if doc_complete and self.running:
-            self.finish()
+            self.show_finished()
         else:
-            self.reset()
-        
-    def cancel(self):
-        self.running = False
-        self.reset()
+            self.show_reset()
+    
+    def show_run(self):
+        self.change_status_text("Loading...\n")
+        self.generate_btn.pack_forget()
+        self.status_display.pack()
+        self.cancel_btn.pack(pady=10)
 
-    def reset(self):
+    def show_reset(self):
         self.status_display.pack_forget()
         self.cancel_btn.pack_forget()
         self.save_btn.pack_forget()
         self.generate_btn.pack()
 
-    def finish(self):
+    def show_finished(self):
+        self.change_status_text(f"100% completed")
         self.cancel_btn.pack_forget()
-        self.status_text.set(f"100% completed")
-        self.root.update()
         self.save_btn.pack(pady=10)
         self.cancel_btn.pack()
 
+    def change_status_text(self, text: str):
+        self.status_text.set(text)
+        self.root.update()
+
+    def cancel(self):
+        self.running = False
+        self.show_reset()
+
     def save_as(self, *event):
-        path = helpers.save_location()
+        path = helpers.choose_directory()
 
         if path:
             self.document.save(path)
-            self.reset()
+            self.show_reset()
             helpers.ask_to_open_file(path)
         else:
             return
@@ -136,7 +137,7 @@ class Application:
         settings.format_document(self.document)
 
 
-    def find_and_add_lyrics(self):   
+    def generate_document(self):   
         songlist: list = self.get_songlist()
 
         song_percentage: float = 100 / len(songlist)
@@ -145,8 +146,7 @@ class Application:
         for idx, song in enumerate(songlist):
             if not self.running:
                 return False
-            self.status_text.set(f"{round(percent_done)}% completed\n{song}")
-            self.root.update()
+            self.change_status_text(f"{round(percent_done)}% completed\n{song}")
             soup: BeautifulSoup = fetch_song_soup(song, self.driver)
             song_data: dict = extract_song_data(song, soup)
 
@@ -156,10 +156,6 @@ class Application:
                 self.document.add_page_break()
             percent_done += song_percentage
         return True
-
-    
-
-
 
     def add_song_to_doc(self, song_data: dict, document) -> None:
         """Adds a song's title, artist and lyrics to the document"""
