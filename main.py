@@ -19,6 +19,7 @@ from docx.shared import RGBColor
 from bs4 import BeautifulSoup, ResultSet
 
 import helpers
+from songs import fetch_song_soup, extract_song_data
 import settings
 
 
@@ -146,8 +147,8 @@ class Application:
                 return False
             self.status_text.set(f"{round(percent_done)}% completed\n{song}")
             self.root.update()
-            soup: BeautifulSoup = helpers.fetch_song_soup(song, self.driver)
-            song_data: dict = helpers.extract_song_data(song, soup)
+            soup: BeautifulSoup = fetch_song_soup(song, self.driver)
+            song_data: dict = extract_song_data(song, soup)
 
             self.add_song_to_doc(song_data, self.document)
 
