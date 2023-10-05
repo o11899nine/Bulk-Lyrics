@@ -52,6 +52,11 @@ class Application:
         )
         self.save_btn.bind("<Return>", self.save_as)
 
+        self.no_save_btn = tk.Button(
+        self.root, text="Don't save", command=self.reset
+        )
+        self.no_save_btn.bind("<Return>", self.save_as)
+
         self.generate_btn = tk.Button(
             self.root, text="Generate document", command=self.generate_document
         )
@@ -71,8 +76,14 @@ class Application:
 
     def cancel(self):
         self.running = False
+        self.status_text.set("Cancelling...\n")
+        self.root.update()
+
+    def reset(self):
         self.status_display.pack_forget()
         self.cancel_btn.pack_forget()
+        self.save_btn.pack_forget()
+        self.no_save_btn.pack_forget()
         self.generate_btn.pack(pady=10)
 
     def save_as(self, *event):
@@ -101,6 +112,8 @@ class Application:
         )
         if open_file:
             os.system('"' + path + '"')
+        else:
+            self.reset()
 
     def focus_next_widget(self, event):
         event.widget.tk_focusNext().focus()
@@ -116,7 +129,6 @@ class Application:
         
         self.generate_btn.pack_forget()
         self.status_display.pack(pady=10)
-        self.cancel_btn.pack()
 
         self.status_text.set("Loading...\n")
         self.root.update()
@@ -126,14 +138,25 @@ class Application:
         self.document = Document()
 
         settings.format_document(self.document)
+       
+        completed = self.find_and_add_lyrics(songlist, driver)            
+        
+        if completed:
+            self.status_text.set(f"100% completed.")
+            self.cancel_btn.pack_forget()
+            self.save_btn.pack()
+            self.no_save_btn.pack()
+            self.root.update()
+        else:
+            self.reset()
 
+    def find_and_add_lyrics(self, songlist, driver):
         song_percentage: float = 100 / len(songlist)
         percent_done: int = 0
-        
-
+        self.cancel_btn.pack()
         for idx, song in enumerate(songlist):
             if not self.running:
-                return
+                return False
             self.status_text.set(f"{round(percent_done)}% completed\n{song}")
             self.root.update()
             soup: BeautifulSoup = self.fetch_song_soup(song, driver)
@@ -144,11 +167,7 @@ class Application:
             if idx != len(songlist) - 1:
                 self.document.add_page_break()
             percent_done += song_percentage
-            
-        
-        self.status_text.set(f"100% completed.\n")
-        self.root.update()
-        self.save_btn.pack()
+        return True
 
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
         """
