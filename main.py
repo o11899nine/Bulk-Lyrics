@@ -63,14 +63,14 @@ class Application:
         status_display = tk.Label(self.root, textvariable=self.status_text)
         status_display.pack()
 
-        self.filepath = None
+
 
         self.root.mainloop()
 
     def save_as(self, *event):
         filetypes = [("Word-document", "*.docx")]
         try:
-            path = filedialog.asksaveasfile(
+            filepath = filedialog.asksaveasfile(
                 filetypes=filetypes,
                 defaultextension=filetypes,
                 initialfile="Bulk Lyrics",
@@ -82,7 +82,17 @@ class Application:
             )
             self.save_as()
 
-        self.document.save(path.name)
+        filepath = filepath.name
+        self.document.save(filepath)
+        self.ask_for_open(filepath)
+
+    def ask_for_open(self, path):
+        open_file = messagebox.askyesno(
+            title="Open document?",
+            message=f"Document saved.\nDo you wish to open it right now?",
+        )
+        if open_file:
+            os.system('"' + path + '"')
 
     def focus_next_widget(self, event):
         event.widget.tk_focusNext().focus()
@@ -124,9 +134,6 @@ class Application:
         self.status_text.set(f"100% completed.")
         self.root.update()
         self.save_btn.pack()
-   
-        if open_file:
-            os.system('"' + self.filepath + '"')
 
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
         """
