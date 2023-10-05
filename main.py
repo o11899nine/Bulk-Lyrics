@@ -24,9 +24,6 @@ import settings
 
 
 # TODO: Refactor more
-# TODO: Generate & Save as one button
-# TODO: Checkbox 'open document when finished'
-# TODO: Add cancel option
 # TODO: Add icon, title, subtitle, instructions
 # TODO: get rid of all the selfs
 # TODO: Browser compatibility
@@ -41,39 +38,53 @@ class Application:
         self.root.title("Bulk Lyrics")
         self.root.geometry("960x720")
 
-        self.textbox = tk.Text(
-            self.root, height=20, width=50, font=("TkDefaultFont", 12)
-        )
-        self.textbox.bind("<Tab>", self.focus_next_widget)
-        self.textbox.bind("<FocusIn>", self.delete_placeholder)
+        self.textbox = tk.Text(self.root, height=20, width=50, font=("TkDefaultFont", 12))
         self.textbox.insert(1.0, "Everlong - Foo Fighters\nBohemian Rhapsody\nArctic Monkeys AM")
-        self.textbox.pack()
+        self.textbox.bind("<FocusIn>", self.delete_placeholder)
+        self.textbox.bind("<Tab>", self.focus_next_widget)
+        self.textbox.pack(pady=20)
 
-        self.save_btn = tk.Button(
-            self.root, text="Save as..", command=self.save_as
-        )
+        self.generate_btn = tk.Button(self.root, text="Generate document", command=self.generate_document)
+        self.generate_btn.bind("<Return>", self.generate_document)
+        self.generate_btn.bind("<Tab>", self.focus_next_widget)
+        self.generate_btn.pack()
+
+        self.cancel_btn = tk.Button(self.root, text="Cancel", command=self.cancel)
+        self.cancel_btn.bind("<Return>", self.cancel)
+        self.cancel_btn.bind("<Tab>", self.focus_next_widget)
+
+        self.save_btn = tk.Button(self.root, text="Save as..", command=self.save_as)
         self.save_btn.bind("<Return>", self.save_as)
-
-        self.no_save_btn = tk.Button(
-        self.root, text="Don't save", command=self.reset
-        )
-        self.no_save_btn.bind("<Return>", self.save_as)
-
-        self.generate_btn = tk.Button(
-            self.root, text="Generate document", command=self.run
-        )
-        self.generate_btn.bind("<Return>", self.run)
-        self.generate_btn.pack(pady=10)
-
-
-        self.cancel_btn = tk.Button(
-            self.root, text="Cancel", command=self.cancel
-        )
+        self.save_btn.bind("<Tab>", self.focus_next_widget)      
+        
         self.status_text = StringVar()
 
         self.status_display = tk.Label(self.root, textvariable=self.status_text)
 
         self.root.mainloop()
+
+    def generate_document(self, *event):
+        self.running = True
+
+        if not self.check_for_input():
+            return
+        
+        self.generate_btn.pack_forget()
+
+        self.status_display.pack()
+        self.status_text.set("Loading...\n")
+        self.root.update()
+        self.cancel_btn.pack(pady=10)
+        
+        self.setup_driver()
+        self.setup_document()
+
+        completed: bool = self.find_and_add_lyrics()            
+        
+        if completed:
+            self.finish()
+        else:
+            self.reset()
 
     def delete_placeholder(self, *event):
         self.textbox.delete(1.0, tk.END)
@@ -86,8 +97,14 @@ class Application:
         self.status_display.pack_forget()
         self.cancel_btn.pack_forget()
         self.save_btn.pack_forget()
-        self.no_save_btn.pack_forget()
-        self.generate_btn.pack(pady=10)
+        self.generate_btn.pack()
+
+    def finish(self):
+        self.cancel_btn.pack_forget()
+        self.status_text.set(f"100% completed")
+        self.root.update()
+        self.save_btn.pack()
+        self.cancel_btn.pack()
 
     def save_as(self, *event):
         filetypes = [("Word-document", "*.docx")]
@@ -117,8 +134,8 @@ class Application:
 
     def ask_for_open(self, path):
         open_file = messagebox.askyesno(
-            title="Open document?",
-            message=f"Document saved.\nDo you wish to open it right now?",
+            title="Document saved",
+            message=f"Document saved.\nDo you want to open it right now?",
         )
 
         if open_file:
@@ -129,29 +146,7 @@ class Application:
         event.widget.tk_focusNext().focus()
         return "break"
 
-    def run(self, *event):
-        self.running = True
 
-        if not self.check_for_input():
-            return
-        
-        self.generate_btn.pack_forget()
-
-        self.status_display.pack(pady=10)
-        self.status_text.set("Loading...\n")
-        self.root.update()
-        
-        self.driver = settings.initiate_driver()
-
-        self.document = Document()
-        settings.format_document(self.document)
-       
-        completed: bool = self.find_and_add_lyrics()            
-        
-        if completed:
-            self.finish()
-        else:
-            self.reset()
 
     def check_for_input(self):
         if self.textbox.get("1.0", tk.END) == "\n":
@@ -161,20 +156,20 @@ class Application:
             return False
         return True
     
-    def finish(self):
-        self.status_text.set(f"100% completed.")
-        self.root.update()
-        self.cancel_btn.pack_forget()
-        self.save_btn.pack()
-        self.no_save_btn.pack(pady=10)
+    def setup_driver(self):
+        self.driver = settings.initiate_driver()
 
-    def find_and_add_lyrics(self):
+    def setup_document(self):
+        self.document = Document()
+        settings.format_document(self.document)
 
+
+    def find_and_add_lyrics(self):   
         songlist: list = self.get_songlist()
 
         song_percentage: float = 100 / len(songlist)
         percent_done: int = 0
-        self.cancel_btn.pack()
+
         for idx, song in enumerate(songlist):
             if not self.running:
                 return False
