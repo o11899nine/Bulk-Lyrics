@@ -24,6 +24,8 @@ import settings
 
 
 # TODO: Refactor more
+# TODO: Generate & Save as one button
+# TODO: Checkbox 'open document when finished'
 # TODO: Add cancel option
 # TODO: Add icon, title, subtitle, instructions
 # TODO: get rid of all the selfs
@@ -45,23 +47,16 @@ class Application:
         self.textbox.bind("<Tab>", self.focus_next_widget)
         self.textbox.pack(pady=10)
 
-        directory_btn = tk.Button(
-            self.root, text="Choose directory", command=self.choose_dir
+        self.save_btn = tk.Button(
+            self.root, text="Save as..", command=self.save_as
         )
-        directory_btn.bind("<Return>", self.choose_dir)
-        directory_btn.pack()
+        self.save_btn.bind("<Return>", self.save_as)
 
-        self.directory_text = StringVar()
-        self.directory_text.set("No directory chosen.")
-
-        directory_display = tk.Label(self.root, textvariable=self.directory_text)
-        directory_display.pack()
-
-        generate_btn = tk.Button(
+        self.generate_btn = tk.Button(
             self.root, text="Generate document", command=self.generate_document
         )
-        generate_btn.bind("<Return>", self.generate_document)
-        generate_btn.pack(pady=(10, 0))
+        self.generate_btn.bind("<Return>", self.generate_document)
+        self.generate_btn.pack(pady=(10, 0))
 
         self.status_text = StringVar()
 
@@ -72,7 +67,7 @@ class Application:
 
         self.root.mainloop()
 
-    def choose_dir(self, *event):
+    def save_as(self, *event):
         filetypes = [("Word-document", "*.docx")]
         try:
             path = filedialog.asksaveasfile(
@@ -85,9 +80,9 @@ class Application:
                 title="Access Denied",
                 message="Access denied.\nClose the document if it's open and try again.",
             )
-            self.choose_dir()
-        self.filepath = path.name
-        self.directory_text.set(self.filepath)
+            self.save_as()
+
+        self.document.save(path.name)
 
     def focus_next_widget(self, event):
         event.widget.tk_focusNext().focus()
@@ -99,21 +94,17 @@ class Application:
                 title="No Songs", message="Please enter song information."
             )
             return
-
-        if not self.filepath:
-            messagebox.showwarning(
-                title="No Directory", message="Please choose a save location."
-            )
-            return
+        
+        self.generate_btn.pack_forget()
 
         self.status_text.set("Loading...")
         self.root.update()
         songlist: list = self.get_songlist()
 
         driver = settings.initiate_driver()
-        document = Document()
+        self.document = Document()
 
-        settings.format_document(document)
+        settings.format_document(self.document)
 
         song_percentage: float = 100 / len(songlist)
         percent_done: int = 0
@@ -124,19 +115,16 @@ class Application:
             soup: BeautifulSoup = self.fetch_song_soup(song, driver)
             song_data: dict = self.extract_song_data(song, soup)
 
-            self.add_song_to_doc(song_data, document)
+            self.add_song_to_doc(song_data, self.document)
 
             if idx != len(songlist) - 1:
-                document.add_page_break()
+                self.document.add_page_break()
             percent_done += song_percentage
 
         self.status_text.set(f"100% completed.")
         self.root.update()
-        document.save(self.filepath)
-        open_file = messagebox.askyesno(
-            title="Finished",
-            message=f"Document finished.\nDo you wish to open it right now?",
-        )
+        self.save_btn.pack()
+   
         if open_file:
             os.system('"' + self.filepath + '"')
 
