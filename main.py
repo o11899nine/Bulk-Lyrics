@@ -12,9 +12,9 @@
 
 import re
 import os
-
 import tkinter as tk
 from tkinter import messagebox, StringVar, filedialog
+
 from docx import Document
 from docx.shared import RGBColor
 from bs4 import BeautifulSoup, ResultSet
@@ -58,9 +58,9 @@ class Application:
         self.no_save_btn.bind("<Return>", self.save_as)
 
         self.generate_btn = tk.Button(
-            self.root, text="Generate document", command=self.generate_document
+            self.root, text="Generate document", command=self.run
         )
-        self.generate_btn.bind("<Return>", self.generate_document)
+        self.generate_btn.bind("<Return>", self.run)
         self.generate_btn.pack(pady=10)
 
 
@@ -71,13 +71,11 @@ class Application:
 
         self.status_display = tk.Label(self.root, textvariable=self.status_text)
 
-        self.running = True
         self.root.mainloop()
 
     def cancel(self):
         self.running = False
-        self.status_text.set("Cancelling...\n")
-        self.root.update()
+        self.reset()
 
     def reset(self):
         self.status_display.pack_forget()
@@ -100,57 +98,75 @@ class Application:
                 message="Access denied.\nClose the document if it's open and try again.",
             )
             self.save_as()
+        try:
+            filepath = filepath.name
+        except AttributeError:
+            pass
 
-        filepath = filepath.name
-        self.document.save(filepath)
-        self.ask_for_open(filepath)
+        if filepath:
+            self.document.save(filepath)
+            self.reset()
+            self.ask_for_open(filepath)
+        else:
+            return
 
     def ask_for_open(self, path):
         open_file = messagebox.askyesno(
             title="Open document?",
             message=f"Document saved.\nDo you wish to open it right now?",
         )
+
         if open_file:
             os.system('"' + path + '"')
-        else:
-            self.reset()
+          
 
     def focus_next_widget(self, event):
         event.widget.tk_focusNext().focus()
         return "break"
 
-    def generate_document(self, *event):
+    def run(self, *event):
         self.running = True
+
+        if not self.check_for_input():
+            return
+        
+        self.generate_btn.pack_forget()
+
+        self.status_display.pack(pady=10)
+        self.status_text.set("Loading...\n")
+        self.root.update()
+        
+        self.driver = settings.initiate_driver()
+
+        self.document = Document()
+        settings.format_document(self.document)
+       
+        completed: bool = self.find_and_add_lyrics()            
+        
+        if completed:
+            self.finish()
+        else:
+            self.reset()
+
+    def check_for_input(self):
         if self.textbox.get("1.0", tk.END) == "\n":
             messagebox.showwarning(
                 title="No Songs", message="Please enter song information."
             )
-            return
-        
-        self.generate_btn.pack_forget()
-        self.status_display.pack(pady=10)
-
-        self.status_text.set("Loading...\n")
+            return False
+        return True
+    
+    def finish(self):
+        self.status_text.set(f"100% completed.")
         self.root.update()
+        self.cancel_btn.pack_forget()
+        self.save_btn.pack()
+        self.no_save_btn.pack(pady=10)
+
+    def find_and_add_lyrics(self):
+
         songlist: list = self.get_songlist()
 
-        driver = settings.initiate_driver()
-        self.document = Document()
-
-        settings.format_document(self.document)
-       
-        completed = self.find_and_add_lyrics(songlist, driver)            
-        
-        if completed:
-            self.status_text.set(f"100% completed.")
-            self.cancel_btn.pack_forget()
-            self.save_btn.pack()
-            self.no_save_btn.pack()
-            self.root.update()
-        else:
-            self.reset()
-
-    def find_and_add_lyrics(self, songlist, driver):
         song_percentage: float = 100 / len(songlist)
         percent_done: int = 0
         self.cancel_btn.pack()
@@ -159,7 +175,7 @@ class Application:
                 return False
             self.status_text.set(f"{round(percent_done)}% completed\n{song}")
             self.root.update()
-            soup: BeautifulSoup = self.fetch_song_soup(song, driver)
+            soup: BeautifulSoup = self.fetch_song_soup(song, self.driver)
             song_data: dict = self.extract_song_data(song, soup)
 
             self.add_song_to_doc(song_data, self.document)
