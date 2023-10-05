@@ -45,7 +45,7 @@ class Application:
             self.root, height=20, width=50, font=("TkDefaultFont", 12)
         )
         self.textbox.bind("<Tab>", self.focus_next_widget)
-        self.textbox.pack(pady=10)
+        self.textbox.pack()
 
         self.save_btn = tk.Button(
             self.root, text="Save as..", command=self.save_as
@@ -56,16 +56,24 @@ class Application:
             self.root, text="Generate document", command=self.generate_document
         )
         self.generate_btn.bind("<Return>", self.generate_document)
-        self.generate_btn.pack(pady=(10, 0))
+        self.generate_btn.pack(pady=10)
 
+
+        self.cancel_btn = tk.Button(
+            self.root, text="Cancel", command=self.cancel
+        )
         self.status_text = StringVar()
 
-        status_display = tk.Label(self.root, textvariable=self.status_text)
-        status_display.pack()
+        self.status_display = tk.Label(self.root, textvariable=self.status_text)
 
-
-
+        self.running = True
         self.root.mainloop()
+
+    def cancel(self):
+        self.running = False
+        self.status_display.pack_forget()
+        self.cancel_btn.pack_forget()
+        self.generate_btn.pack(pady=10)
 
     def save_as(self, *event):
         filetypes = [("Word-document", "*.docx")]
@@ -99,6 +107,7 @@ class Application:
         return "break"
 
     def generate_document(self, *event):
+        self.running = True
         if self.textbox.get("1.0", tk.END) == "\n":
             messagebox.showwarning(
                 title="No Songs", message="Please enter song information."
@@ -106,8 +115,10 @@ class Application:
             return
         
         self.generate_btn.pack_forget()
+        self.status_display.pack(pady=10)
+        self.cancel_btn.pack()
 
-        self.status_text.set("Loading...")
+        self.status_text.set("Loading...\n")
         self.root.update()
         songlist: list = self.get_songlist()
 
@@ -118,9 +129,12 @@ class Application:
 
         song_percentage: float = 100 / len(songlist)
         percent_done: int = 0
+        
 
         for idx, song in enumerate(songlist):
-            self.status_text.set(f"{round(percent_done)}% completed.\n{song}")
+            if not self.running:
+                return
+            self.status_text.set(f"{round(percent_done)}% completed\n{song}")
             self.root.update()
             soup: BeautifulSoup = self.fetch_song_soup(song, driver)
             song_data: dict = self.extract_song_data(song, soup)
@@ -130,8 +144,9 @@ class Application:
             if idx != len(songlist) - 1:
                 self.document.add_page_break()
             percent_done += song_percentage
-
-        self.status_text.set(f"100% completed.")
+            
+        
+        self.status_text.set(f"100% completed.\n")
         self.root.update()
         self.save_btn.pack()
 
