@@ -11,9 +11,8 @@
 # bohemian rhapsody
 
 import re
-import os
 import tkinter as tk
-from tkinter import messagebox, StringVar, filedialog
+from tkinter import messagebox, StringVar
 
 from docx import Document
 from docx.shared import RGBColor
@@ -29,6 +28,8 @@ import settings
 # TODO: Browser compatibility
 # TODO: consistent naming
 # TODO: readme
+# TODO: scrollbar
+# TODO: Fix issue where program crashes when file is opened
 # TODO: comments, docstrings
 
 
@@ -39,8 +40,7 @@ class Application:
         self.root.geometry("960x720")
 
         self.textbox = tk.Text(self.root, height=20, width=50, font=("TkDefaultFont", 12))
-        self.textbox.insert(1.0, "Everlong - Foo Fighters\nBohemian Rhapsody\nArctic Monkeys AM")
-        self.textbox.bind("<FocusIn>", self.delete_placeholder)
+        self.textbox.insert(1.0, "Everlong - Foo Fighters\nBohemian Rhapsody\nArctic Monkeys 505")
         self.textbox.bind("<Tab>", self.focus_next_widget)
         self.textbox.pack(pady=20)
 
@@ -58,7 +58,6 @@ class Application:
         self.save_btn.bind("<Tab>", self.focus_next_widget)      
         
         self.status_text = StringVar()
-
         self.status_display = tk.Label(self.root, textvariable=self.status_text)
 
         self.root.mainloop()
@@ -79,15 +78,12 @@ class Application:
         self.setup_driver()
         self.setup_document()
 
-        completed: bool = self.find_and_add_lyrics()            
+        doc_complete: bool = self.find_and_add_lyrics()            
         
-        if completed:
+        if doc_complete and self.running:
             self.finish()
         else:
             self.reset()
-
-    def delete_placeholder(self, *event):
-        self.textbox.delete(1.0, tk.END)
         
     def cancel(self):
         self.running = False
@@ -103,43 +99,18 @@ class Application:
         self.cancel_btn.pack_forget()
         self.status_text.set(f"100% completed")
         self.root.update()
-        self.save_btn.pack()
+        self.save_btn.pack(pady=10)
         self.cancel_btn.pack()
 
     def save_as(self, *event):
-        filetypes = [("Word-document", "*.docx")]
-        try:
-            filepath = filedialog.asksaveasfile(
-                filetypes=filetypes,
-                defaultextension=filetypes,
-                initialfile="Bulk Lyrics",
-            )
-        except PermissionError:
-            messagebox.showwarning(
-                title="Access Denied",
-                message="Access denied.\nClose the document if it's open and try again.",
-            )
-            self.save_as()
-        try:
-            filepath = filepath.name
-        except AttributeError:
-            pass
+        path = helpers.save_location()
 
-        if filepath:
-            self.document.save(filepath)
+        if path:
+            self.document.save(path)
             self.reset()
-            self.ask_for_open(filepath)
+            helpers.ask_to_open_file(path)
         else:
             return
-
-    def ask_for_open(self, path):
-        open_file = messagebox.askyesno(
-            title="Document saved",
-            message=f"Document saved.\nDo you want to open it right now?",
-        )
-
-        if open_file:
-            os.system('"' + path + '"')
           
 
     def focus_next_widget(self, event):
@@ -175,8 +146,8 @@ class Application:
                 return False
             self.status_text.set(f"{round(percent_done)}% completed\n{song}")
             self.root.update()
-            soup: BeautifulSoup = self.fetch_song_soup(song, self.driver)
-            song_data: dict = self.extract_song_data(song, soup)
+            soup: BeautifulSoup = helpers.fetch_song_soup(song, self.driver)
+            song_data: dict = helpers.extract_song_data(song, soup)
 
             self.add_song_to_doc(song_data, self.document)
 
@@ -185,51 +156,9 @@ class Application:
             percent_done += song_percentage
         return True
 
-    def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
-        """
-        Finds a song's title, artist and lyrics in the song's BeautifulSoup and
-        returns a dict with that info. If a song's lyrics are not found, the user's
-        input is used for the song's title and google's first hit for the song's
-        lyrics is stored in the dict
-        """
+    
 
-        lyrics: ResultSet = soup.find_all("div", {"jsname": "U8S5sf"})
 
-        if len(lyrics) == 0:
-            title: str = song
-            artist: bool = False
-            lyrics: bool = False
-        else:
-            title: str = soup.find("div", {"data-attrid": "title"}).text
-            artist: str = soup.find("div", {"data-attrid": "subtitle"}).text
-            artist = self.delete_extra_text(artist)
-
-        try:
-            first_google_hit: str = soup.find("a", {"jsname": "UWckNb"})["href"]
-        except:
-            first_google_hit: bool = False
-
-        song_data: dict = {
-            "title": title,
-            "artist": artist,
-            "lyrics": lyrics,
-            "link": first_google_hit,
-        }
-
-        return song_data
-
-    def delete_extra_text(self, artist: str) -> str:
-        """Deletes the words 'Song by' before the artist. Then returns the artist"""
-        # Google displays the artist as "Song by Artist", so the second uppercase
-        # letter is the start of the artist's name. The code below finds the index
-        # of that second uppercase letter and then removes all text before it
-        m: re.Match = re.search(r"^([^A-Z]*[A-Z]){2}", artist)
-        try:
-            idx: int = m.span()[1] - 1
-        except:
-            return "Unknown Artist"
-
-        return artist[idx:]
 
     def add_song_to_doc(self, song_data: dict, document) -> None:
         """Adds a song's title, artist and lyrics to the document"""
@@ -257,15 +186,7 @@ class Application:
                 p.add_run(f"Try here: ")
                 helpers.add_hyperlink(p, song_data["link"], song_data["link"])
 
-    def fetch_song_soup(self, song: str, driver) -> BeautifulSoup:
-        """
-        Searches Google for a song's lyrics and returns a BeautifulSoup of
-        the search results page.
-        """
-        driver.get(f"https://google.com/search?q={song} lyrics")
-        helpers.accept_cookies(driver)
-        html: str = driver.page_source
-        return BeautifulSoup(html, "lxml")
+
 
     def get_songlist(self) -> list:
         """
