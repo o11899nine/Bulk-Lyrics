@@ -11,7 +11,6 @@
 # bohemian rhapsody
 
 import re
-import threading
 import tkinter as tk
 from tkinter import messagebox, StringVar
 
@@ -29,7 +28,6 @@ import settings
 # TODO: readme
 # TODO: scrollbar
 # TODO: type hinting
-# TODO: Fix issue where cancelling in last song shows wrong buttons
 # TODO: Fix issue where program crashes when file is opened
 # TODO: comments, docstrings, consistent naming
 
@@ -50,13 +48,13 @@ class Application:
         self.generate_btn.bind("<Tab>", self.focus_next_widget)
         self.generate_btn.pack()
 
-        self.cancel_btn = tk.Button(self.root, text="Cancel", command=self.cancel)
-        self.cancel_btn.bind("<Return>", self.cancel)
-        self.cancel_btn.bind("<Tab>", self.focus_next_widget)
-
         self.save_btn = tk.Button(self.root, text="Save as..", command=self.save_as)
         self.save_btn.bind("<Return>", self.save_as)
-        self.save_btn.bind("<Tab>", self.focus_next_widget)      
+        self.save_btn.bind("<Tab>", self.focus_next_widget)     
+
+        self.no_save_btn = tk.Button(self.root, text="Don't save", command=self.display_reset)
+        self.no_save_btn.bind("<Return>", self.display_reset)
+        self.no_save_btn.bind("<Tab>", self.focus_next_widget)   
         
         self.status_text = StringVar()
         self.status_display = tk.Label(self.root, textvariable=self.status_text)
@@ -64,51 +62,34 @@ class Application:
         self.root.mainloop()
 
     def main(self, *event):
-        self.running = True
-
         if not self.check_for_input(): 
             return
         
         self.display_run()
         self.setup_driver()
         self.setup_document()
-
-        self.generate_thread = threading.Thread(target=self.generate_document)
-        self.generate_thread.start() 
-       
-        if self.running and not self.generate_thread.is_alive():
-            self.display_finished()
-        elif not self.generate_thread.is_alive():
-            self.display_reset()
+        self.generate_document()            
+        self.display_finished()
     
     def display_run(self):
         self.generate_btn.pack_forget()
         self.status_display.pack()
-        self.cancel_btn.pack(pady=10)
         self.change_status_text("Loading...\n")
 
     def display_reset(self):
         self.status_display.pack_forget()
-        self.cancel_btn.pack_forget()
         self.save_btn.pack_forget()
+        self.no_save_btn.pack_forget()
         self.generate_btn.pack()
 
     def display_finished(self):
         self.change_status_text(f"100% completed")
-        self.cancel_btn.pack_forget()
         self.save_btn.pack(pady=10)
-        self.cancel_btn.pack()
+        self.no_save_btn.pack()
 
     def change_status_text(self, text: str):
         self.status_text.set(text)
         self.root.update()
-
-    def cancel(self):
-        self.running = False
-
-        if hasattr(self, "generate_thread") and self.generate_thread.is_alive():
-            self.generate_thread.join()
-        self.display_reset()
 
     def save_as(self, *event):
         path = helpers.choose_directory()
@@ -150,8 +131,6 @@ class Application:
         percent_done: int = 0
 
         for idx, song in enumerate(songlist):
-            if not self.running:
-                return
             self.change_status_text(f"{round(percent_done)}% completed\n{song}")
             soup: BeautifulSoup = fetch_song_soup(song, self.driver)
             song_data: dict = extract_song_data(song, soup)
@@ -161,8 +140,8 @@ class Application:
             if idx != len(songlist) - 1:
                 self.document.add_page_break()
             percent_done += song_percentage
-     
-    
+
+        return True
 
     def add_song_to_doc(self, song_data: dict, document) -> None:
         """Adds a song's title, artist and lyrics to the document"""
