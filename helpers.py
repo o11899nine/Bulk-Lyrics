@@ -99,7 +99,6 @@ def ask_to_open_file(path):
 
     
     if open_file_response:
-        # Create a separate thread to open the file
         open_file_thread = threading.Thread(target=open_file, args=(path,))
         open_file_thread.start()
         
