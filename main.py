@@ -32,7 +32,7 @@ class Application:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Bulk Lyrics")
-        self.root.geometry("960x720")
+        self.root.geometry("600x600")
 
         self.textbox = tk.Text(
             self.root, height=20, width=50, font=("TkDefaultFont", 12)
@@ -42,7 +42,7 @@ class Application:
             "Nirvana - Smells Like Teen Spirit\nBohemian Rhapsody\nThe Beatles Hey Jude",
         )
         self.textbox.bind("<Tab>", self.focus_next_widget)
-        self.textbox.pack(pady=20)
+        self.textbox.pack(pady=(40,20))
 
         self.generate_btn = tk.Button(
             self.root, text="Generate document", command=self.main
