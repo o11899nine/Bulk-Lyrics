@@ -13,37 +13,37 @@ def fetch_song_soup(song: str, driver) -> BeautifulSoup:
     return BeautifulSoup(html, "lxml")
 
 def extract_song_data(song: str, soup: BeautifulSoup) -> dict:
-        """
-        Finds a song's title, artist and lyrics in the song's BeautifulSoup and
-        returns a dict with that info. If a song's lyrics are not found, the user's
-        input is used for the song's title and google's first hit for the song's
-        lyrics is stored in the dict
-        """
+    """
+    Finds a song's title, artist and lyrics in the song's BeautifulSoup and
+    returns a dict with that info. If a song's lyrics are not found, the user's
+    input is used for the song's title and google's first hit for the song's
+    lyrics is stored in the dict
+    """
 
-        lyrics: ResultSet = soup.find_all("div", {"jsname": "U8S5sf"})
+    lyrics: ResultSet = soup.find_all("div", {"jsname": "U8S5sf"})
 
-        if len(lyrics) == 0:
-            title: str = song
-            artist: bool = False
-            lyrics: bool = False
-        else:
-            title: str = soup.find("div", {"data-attrid": "title"}).text
-            artist: str = soup.find("div", {"data-attrid": "subtitle"}).text
-            artist = delete_extra_text(artist)
+    if len(lyrics) == 0:
+        title: str = song
+        artist: bool = False
+        lyrics: bool = False
+    else:
+        title: str = soup.find("div", {"data-attrid": "title"}).text
+        artist: str = soup.find("div", {"data-attrid": "subtitle"}).text
+        artist = delete_extra_text(artist)
 
-        try:
-            first_google_hit: str = soup.find("a", {"jsname": "UWckNb"})["href"]
-        except:
-            first_google_hit: bool = False
+    try:
+        first_google_hit: str = soup.find("a", {"jsname": "UWckNb"})["href"]
+    except:
+        first_google_hit: bool = False
 
-        song_data: dict = {
-            "title": title,
-            "artist": artist,
-            "lyrics": lyrics,
-            "link": first_google_hit,
-        }
+    song_data: dict = {
+        "title": title,
+        "artist": artist,
+        "lyrics": lyrics,
+        "link": first_google_hit,
+    }
 
-        return song_data
+    return song_data
 
 def delete_extra_text(artist: str) -> str:
     """Deletes the words 'Song by' before the artist. Then returns the artist"""
