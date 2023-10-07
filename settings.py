@@ -7,7 +7,7 @@ def initiate_driver() -> webdriver.Chrome:
     """Sets up and returns the Selenium Chrome webdriver"""
     options = Options()
     options.page_load_strategy = "eager"
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     return webdriver.Chrome(options=options)
 

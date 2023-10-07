@@ -22,13 +22,9 @@ import helpers
 from songs import fetch_song_soup, extract_song_data
 import settings
 
-
 # TODO: Add icon, title, subtitle, instructions
-# TODO: Browser compatibility
 # TODO: readme
-# TODO: scrollbar
 # TODO: type hinting
-# TODO: Fix issue where program crashes when file is opened
 # TODO: comments, docstrings, consistent naming
 
 
@@ -38,39 +34,48 @@ class Application:
         self.root.title("Bulk Lyrics")
         self.root.geometry("960x720")
 
-        self.textbox = tk.Text(self.root, height=20, width=50, font=("TkDefaultFont", 12))
-        self.textbox.insert(1.0, "Nirvana - Smells Like Teen Spirit\nBohemian Rhapsody\nThe Beatles Hey Jude")
+        self.textbox = tk.Text(
+            self.root, height=20, width=50, font=("TkDefaultFont", 12)
+        )
+        self.textbox.insert(
+            1.0,
+            "Nirvana - Smells Like Teen Spirit\nBohemian Rhapsody\nThe Beatles Hey Jude",
+        )
         self.textbox.bind("<Tab>", self.focus_next_widget)
         self.textbox.pack(pady=20)
 
-        self.generate_btn = tk.Button(self.root, text="Generate document", command=self.main)
+        self.generate_btn = tk.Button(
+            self.root, text="Generate document", command=self.main
+        )
         self.generate_btn.bind("<Return>", self.main)
         self.generate_btn.bind("<Tab>", self.focus_next_widget)
         self.generate_btn.pack()
 
         self.save_btn = tk.Button(self.root, text="Save as..", command=self.save_as)
         self.save_btn.bind("<Return>", self.save_as)
-        self.save_btn.bind("<Tab>", self.focus_next_widget)     
+        self.save_btn.bind("<Tab>", self.focus_next_widget)
 
-        self.no_save_btn = tk.Button(self.root, text="Don't save", command=self.display_reset)
+        self.no_save_btn = tk.Button(
+            self.root, text="Don't save", command=self.display_reset
+        )
         self.no_save_btn.bind("<Return>", self.display_reset)
-        self.no_save_btn.bind("<Tab>", self.focus_next_widget)   
-        
+        self.no_save_btn.bind("<Tab>", self.focus_next_widget)
+
         self.status_text = StringVar()
         self.status_display = tk.Label(self.root, textvariable=self.status_text)
 
         self.root.mainloop()
 
     def main(self, *event):
-        if not self.check_for_input(): 
+        if not self.check_for_input():
             return
-        
+
         self.display_run()
         self.setup_driver()
         self.setup_document()
-        self.generate_document()            
+        self.generate_document()
         self.display_finished()
-    
+
     def display_run(self):
         self.generate_btn.pack_forget()
         self.status_display.pack()
@@ -100,13 +105,10 @@ class Application:
             helpers.ask_to_open_file(path)
         else:
             return
-          
 
     def focus_next_widget(self, event):
         event.widget.tk_focusNext().focus()
         return "break"
-
-
 
     def check_for_input(self):
         if self.textbox.get("1.0", tk.END) == "\n":
@@ -115,16 +117,17 @@ class Application:
             )
             return False
         return True
-    
+
     def setup_driver(self):
+        self.change_status_text("Initiating driver...\n")
         self.driver = settings.initiate_driver()
 
     def setup_document(self):
+        self.change_status_text("Preparing document...\n")
         self.document = Document()
         settings.format_document(self.document)
 
-
-    def generate_document(self):   
+    def generate_document(self):
         songlist: list = self.get_songlist()
 
         song_percentage: float = 100 / len(songlist)
@@ -168,8 +171,6 @@ class Application:
                 p = document.add_paragraph()
                 p.add_run(f"Try here: ")
                 helpers.add_hyperlink(p, song_data["link"], song_data["link"])
-
-
 
     def get_songlist(self) -> list:
         """

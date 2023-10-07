@@ -1,5 +1,6 @@
 import docx
 import os
+import threading
 from tkinter import messagebox, filedialog
 
 def choose_directory():
@@ -91,10 +92,16 @@ def get_or_create_hyperlink_style(d):
 
 
 def ask_to_open_file(path):
-    open_file = messagebox.askyesno(
+    open_file_response = messagebox.askyesno(
         title="Document saved",
         message=f"Document saved.\nDo you want to open it right now?",
     )
 
-    if open_file:
-        os.system('"' + path + '"')
+    
+    if open_file_response:
+        # Create a separate thread to open the file
+        open_file_thread = threading.Thread(target=open_file, args=(path,))
+        open_file_thread.start()
+        
+def open_file(path):
+    os.system('"' + path + '"')
