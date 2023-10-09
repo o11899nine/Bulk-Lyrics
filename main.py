@@ -5,11 +5,6 @@
 # If a song's lyrics are not found, a link to the first google
 # hit for that song's lyrics is saved and displayed to the user later.
 
-# User input might look something like this:
-# mardy bum arctic monkeys
-# everlong foo fighters
-# bohemian rhapsody
-
 import re
 import tkinter as tk
 from tkinter import messagebox, StringVar
@@ -22,42 +17,35 @@ import helpers
 from songs import fetch_song_soup, extract_song_data
 import settings
 
-# TODO: Add icon, title, subtitle, instructions
 # TODO: readme
-# TODO: type hinting
-# TODO: comments, docstrings, consistent naming
+# TODO: comments
+# TODO: is songs.py necesarry?
 
 
 class Application:
-    def __init__(self):
+    def __init__(self) -> None:
+        
         self.root = tk.Tk()
         self.root.title("Bulk Lyrics")
         self.root.geometry("600x600")
 
-        self.textbox = tk.Text(
-            self.root, height=20, width=50, font=("TkDefaultFont", 12)
-        )
-        self.textbox.insert(
-            1.0,
-            "Nirvana - Smells Like Teen Spirit\nBohemian Rhapsody\nThe Beatles Hey Jude",
-        )
+        placeholder: str = "Nirvana - Smells Like Teen Spirit\nBohemian Rhapsody\nThe Beatles Hey Jude"
+        
+        self.textbox = tk.Text(self.root, height=20, width=50, font=("", 12))
+        self.textbox.insert(1.0, placeholder)
         self.textbox.bind("<Tab>", self.focus_next_widget)
         self.textbox.pack(pady=(40,20))
 
-        self.generate_btn = tk.Button(
-            self.root, text="Generate document", command=self.main
-        )
-        self.generate_btn.bind("<Return>", self.main)
-        self.generate_btn.bind("<Tab>", self.focus_next_widget)
-        self.generate_btn.pack()
+        self.run_btn = tk.Button(self.root, text="Generate document", command=self.run)
+        self.run_btn.bind("<Return>", self.run)
+        self.run_btn.bind("<Tab>", self.focus_next_widget)
+        self.run_btn.pack()
 
         self.save_btn = tk.Button(self.root, text="Save as..", command=self.save_as)
         self.save_btn.bind("<Return>", self.save_as)
         self.save_btn.bind("<Tab>", self.focus_next_widget)
 
-        self.no_save_btn = tk.Button(
-            self.root, text="Don't save", command=self.display_reset
-        )
+        self.no_save_btn = tk.Button(self.root, text="Don't save", command=self.display_reset)
         self.no_save_btn.bind("<Return>", self.display_reset)
         self.no_save_btn.bind("<Tab>", self.focus_next_widget)
 
@@ -66,38 +54,64 @@ class Application:
 
         self.root.mainloop()
 
-    def main(self, *event):
+
+    def run(self, *event) -> None:
+        """
+        Is called when the user clicks 'generate document'.
+        """
         if not self.check_for_input():
             return
 
-        self.display_run()
+        self.display_running()
         self.setup_driver()
         self.setup_document()
         self.generate_document()
         self.display_finished()
 
-    def display_run(self):
-        self.generate_btn.pack_forget()
+
+    def display_running(self) -> None:
+        """
+        Shows/hides relevant buttons/text when the program is running
+        """
+        self.run_btn.pack_forget()
         self.status_display.pack()
         self.change_status_text("Loading...\n")
 
-    def display_reset(self):
+
+    def display_reset(self) -> None:
+        """
+        Shows/hides relevant buttons/text when the program is reset
+        """
         self.status_display.pack_forget()
         self.save_btn.pack_forget()
         self.no_save_btn.pack_forget()
-        self.generate_btn.pack()
+        self.run_btn.pack()
 
-    def display_finished(self):
-        self.change_status_text(f"100% completed")
+
+    def display_finished(self) -> None:
+        """
+        Shows/hides relevant buttons/text when the program is finished
+        """
         self.save_btn.pack(pady=10)
         self.no_save_btn.pack()
+        self.change_status_text(f"100% completed")
 
-    def change_status_text(self, text: str):
+
+    def change_status_text(self, text: str) -> None:
+        """
+        Takes a string 'text' and updates the UI's status display to it.
+        """
         self.status_text.set(text)
         self.root.update()
 
-    def save_as(self, *event):
-        path = helpers.choose_directory()
+
+    def save_as(self, *event) -> None:
+        """
+        Is called when the user clicks the 'Save as..' button.
+        Prompts the user to choose a save location and then saves the docx there.
+        When the file is saved, the user is asked whether they want to open the file.
+        """
+        path: str = helpers.choose_directory()
 
         if path:
             self.document.save(path)
@@ -106,11 +120,18 @@ class Application:
         else:
             return
 
-    def focus_next_widget(self, event):
+    def focus_next_widget(self, event) -> str:
+        """
+        Allows the user to jump from one field/button to the next.
+        """
         event.widget.tk_focusNext().focus()
         return "break"
 
-    def check_for_input(self):
+
+    def check_for_input(self) -> bool:
+        """
+        Checks whether the user has entered at least one character in the textbox
+        """
         if self.textbox.get("1.0", tk.END) == "\n":
             messagebox.showwarning(
                 title="No Songs", message="Please enter song information."
@@ -118,23 +139,38 @@ class Application:
             return False
         return True
 
-    def setup_driver(self):
+
+    def setup_driver(self) -> None:
+        """
+        Shows a loading text and calls the initiate_driver function
+        """
         self.change_status_text("Initiating driver...\n")
         self.driver = settings.initiate_driver()
 
-    def setup_document(self):
+
+    def setup_document(self) -> None:
+        """
+        Shows a loading text, initiates the docx and calls the format_document function
+        """
         self.change_status_text("Preparing document...\n")
         self.document = Document()
         settings.format_document(self.document)
 
-    def generate_document(self):
+
+    def generate_document(self) -> None:
+        """
+        Takes the user's list of songs and loops over the songs.
+        For each song, webscrapes Google for the lyrics.
+        Then, adds the song and lyrics to the docx and adds a page break.
+        """
         songlist: list = self.get_songlist()
 
-        song_percentage: float = 100 / len(songlist)
-        percent_done: int = 0
+        song_progress_percentage: float = 100 / len(songlist)
+        total_progress_percentage: int = 0
 
         for idx, song in enumerate(songlist):
-            self.change_status_text(f"{round(percent_done)}% completed\n{song}")
+            self.change_status_text(f"{round(total_progress_percentage)}% completed\n{song}")
+
             soup: BeautifulSoup = fetch_song_soup(song, self.driver)
             song_data: dict = extract_song_data(song, soup)
 
@@ -142,12 +178,14 @@ class Application:
 
             if idx != len(songlist) - 1:
                 self.document.add_page_break()
-            percent_done += song_percentage
 
-        return True
+            total_progress_percentage += song_progress_percentage
+
 
     def add_song_to_doc(self, song_data: dict, document) -> None:
-        """Adds a song's title, artist and lyrics to the document"""
+        """
+        Adds a song's title, artist and lyrics to the document
+        """
 
         document.add_heading(song_data["title"].title())
 
@@ -171,6 +209,7 @@ class Application:
                 p = document.add_paragraph()
                 p.add_run(f"Try here: ")
                 helpers.add_hyperlink(p, song_data["link"], song_data["link"])
+
 
     def get_songlist(self) -> list:
         """

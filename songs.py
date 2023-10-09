@@ -12,6 +12,7 @@ def fetch_song_soup(song: str, driver) -> BeautifulSoup:
     html: str = driver.page_source
     return BeautifulSoup(html, "lxml")
 
+
 def extract_song_data(song: str, soup: BeautifulSoup) -> dict:
     """
     Finds a song's title, artist and lyrics in the song's BeautifulSoup and
@@ -19,7 +20,6 @@ def extract_song_data(song: str, soup: BeautifulSoup) -> dict:
     input is used for the song's title and google's first hit for the song's
     lyrics is stored in the dict
     """
-
     lyrics: ResultSet = soup.find_all("div", {"jsname": "U8S5sf"})
 
     if len(lyrics) == 0:
@@ -45,6 +45,7 @@ def extract_song_data(song: str, soup: BeautifulSoup) -> dict:
 
     return song_data
 
+
 def delete_extra_text(artist: str) -> str:
     """Deletes the words 'Song by' before the artist. Then returns the artist"""
     # Google displays the artist as "Song by Artist", so the second uppercase
@@ -57,6 +58,7 @@ def delete_extra_text(artist: str) -> str:
         return "Unknown Artist"
 
     return artist[idx:]
+
 
 def accept_cookies(driver) -> None:
     """Clicks on Google's 'accept cookies' button if it pops up"""

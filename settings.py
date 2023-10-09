@@ -4,14 +4,20 @@ from docx.shared import RGBColor, Cm, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 def initiate_driver() -> webdriver.Chrome:
-    """Sets up and returns the Selenium Chrome webdriver"""
+    """
+    Sets up and returns the Selenium Chrome webdriver
+    """
     options = Options()
     options.page_load_strategy = "eager"
     options.add_argument("--headless")
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     return webdriver.Chrome(options=options)
 
+
 def format_document(document) -> None:
+    """
+    Formats the docx to make it look pretty
+    """
 
     section = document.sections[0]
 
