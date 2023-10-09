@@ -74,13 +74,25 @@ class Application:
         self.generate_document()
         self.display_finished()
 
+    def check_for_input(self) -> bool:
+        """
+        Returns False and shows a warning when no input is found,
+        Returns True if any user input is found.
+        """
+        if self.textbox.get("1.0", tk.END) == "\n":
+            messagebox.showwarning(
+                title="No Songs", message="Please enter song information."
+            )
+            return False
+        return True
+
     def display_running(self) -> None:
         """
         Shows/hides relevant buttons/text when the program is running
         """
         self.run_btn.pack_forget()
         self.status_display.pack()
-        self.change_status_text("Loading...\n")
+        self.update_status_display("Loading...\n")
 
     def display_reset(self) -> None:
         """
@@ -97,29 +109,14 @@ class Application:
         """
         self.save_btn.pack(pady=10)
         self.no_save_btn.pack()
-        self.change_status_text(f"100% completed")
+        self.update_status_display(f"100% completed")
 
-    def change_status_text(self, text: str) -> None:
+    def update_status_display(self, text: str) -> None:
         """
         Takes a string 'text' and updates the UI's status display to it.
         """
         self.status_text.set(text)
         self.root.update()
-
-    def save_as(self, *event) -> None:
-        """
-        Is called when the user clicks the 'Save as..' button.
-        Prompts the user to choose a save location and then saves the docx there.
-        When the file is saved, the user is asked whether they want to open the file.
-        """
-        filepath: str = self.choose_directory()
-
-        if filepath:
-            self.document.save(filepath)
-            self.display_reset()
-            self.ask_to_open_file(filepath)
-        else:
-            return
 
     def focus_next_widget(self, event) -> str:
         """
@@ -128,99 +125,12 @@ class Application:
         event.widget.tk_focusNext().focus()
         return "break"
 
-    def check_for_input(self) -> bool:
-        """
-        Returns False and shows a warning when no input is found,
-        Returns True if any user input is found.
-        """
-        if self.textbox.get("1.0", tk.END) == "\n":
-            messagebox.showwarning(
-                title="No Songs", message="Please enter song information."
-            )
-            return False
-        return True
-
     def setup_driver(self) -> None:
         """
         Shows a loading text and calls the initiate_driver function
         """
-        self.change_status_text("Initiating driver...\n")
+        self.update_status_display("Initiating driver...\n")
         self.driver = self.initiate_driver()
-
-    def setup_document(self) -> None:
-        """
-        Shows a loading text, initiates the docx and calls the format_document function
-        """
-        self.change_status_text("Preparing document...\n")
-        self.document = Document()
-        self.format_document(self.document)
-
-    def generate_document(self) -> None:
-        """
-        Takes the user's list of songs and loops over the songs.
-        For each song, webscrapes Google for the lyrics.
-        Then, adds the song and lyrics to the docx and adds a page break.
-        """
-        songlist: list = self.get_songlist()
-
-        percentage_per_song: float = 100 / len(songlist)
-        total_progress_percentage: int = 0
-
-        for idx, song in enumerate(songlist):
-            self.change_status_text(
-                f"{round(total_progress_percentage)}% completed\n{song}"
-            )
-
-            soup: BeautifulSoup = self.fetch_song_soup(song, self.driver)
-            song_data: dict = self.extract_song_data(song, soup)
-
-            self.add_song_to_doc(song_data, self.document)
-
-            # Add page break after every song, except the last one
-            if idx != len(songlist) - 1:
-                self.document.add_page_break()
-
-            total_progress_percentage += percentage_per_song
-
-    def add_song_to_doc(self, song_data: dict, document) -> None:
-        """
-        Adds a song's title, artist and lyrics to the document
-        """
-
-        document.add_heading(song_data["title"].title())
-
-        if song_data["artist"]:
-            document.add_paragraph(song_data["artist"].title(), style="Subtitle")
-
-        if song_data["lyrics"]:
-            for paragraph in song_data["lyrics"]:
-                lines: ResultSet = paragraph.find_all("span", {"jsname": "YS01Ge"})
-                p = document.add_paragraph()
-                for line in lines:
-                    p.add_run(line.text)
-                    if line != lines[-1]:
-                        p.add_run("\n")
-        else:
-            document.add_paragraph().add_run(
-                "Lyrics Not Found"
-            ).font.color.rgb = RGBColor(255, 0, 0)
-
-            if song_data["link"]:
-                p = document.add_paragraph()
-                p.add_run(f"Try here: ")
-                helpers.add_hyperlink(p, song_data["link"], song_data["link"])
-
-    def get_songlist(self) -> list:
-        """
-        Gets and a list of songs from the user.
-        Cleans up the list and returns it.
-        """
-        songlist: str = self.textbox.get("1.0", tk.END)
-        songlist: list = songlist.replace("\r", "").replace('"', "").split("\n")
-        # Remove redundant spaces and empty strings
-        songlist = [re.sub(" +", " ", song).strip() for song in songlist if song]
-
-        return songlist
 
     def initiate_driver(self) -> webdriver.Chrome:
         """
@@ -231,6 +141,14 @@ class Application:
         options.add_argument("--headless")
         options.add_experimental_option("excludeSwitches", ["enable-logging"])
         return webdriver.Chrome(options=options)
+
+    def setup_document(self) -> None:
+        """
+        Shows a loading text, initiates the docx and calls the format_document function
+        """
+        self.update_status_display("Preparing document...\n")
+        self.document = Document()
+        self.format_document(self.document)
 
     def format_document(self, document) -> None:
         """
@@ -264,6 +182,45 @@ class Application:
         font.name = "Arial"
         font.size = Pt(12)
 
+    def generate_document(self) -> None:
+        """
+        Takes the user's list of songs and loops over the songs.
+        For each song, webscrapes Google for the lyrics.
+        Then, adds the song and lyrics to the docx and adds a page break.
+        """
+        songlist: list = self.get_songlist()
+
+        percentage_per_song: float = 100 / len(songlist)
+        total_progress_percentage: int = 0
+
+        for idx, song in enumerate(songlist):
+            self.update_status_display(
+                f"{round(total_progress_percentage)}% completed\n{song}"
+            )
+
+            soup: BeautifulSoup = self.fetch_song_soup(song, self.driver)
+            song_data: dict = self.extract_song_data(song, soup)
+
+            self.add_song_to_doc(song_data, self.document)
+
+            # Add page break after every song, except the last one
+            if idx != len(songlist) - 1:
+                self.document.add_page_break()
+
+            total_progress_percentage += percentage_per_song
+
+    def get_songlist(self) -> list:
+        """
+        Gets and a list of songs from the user.
+        Cleans up the list and returns it.
+        """
+        songlist: str = self.textbox.get("1.0", tk.END)
+        songlist: list = songlist.replace("\r", "").replace('"', "").split("\n")
+        # Remove redundant spaces and empty strings
+        songlist = [re.sub(" +", " ", song).strip() for song in songlist if song]
+
+        return songlist
+
     def fetch_song_soup(self, song: str, driver) -> BeautifulSoup:
         """
         Searches Google for a song's lyrics and returns a BeautifulSoup of
@@ -273,6 +230,14 @@ class Application:
         self.accept_cookies()
         html: str = driver.page_source
         return BeautifulSoup(html, "lxml")
+
+    def accept_cookies(self) -> None:
+        """Clicks on Google's 'accept cookies' button if it pops up"""
+        try:
+            cookie_button = self.driver.find_element(By.ID, "L2AGLb")
+            cookie_button.click()
+        except:
+            return
 
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
         """
@@ -319,12 +284,47 @@ class Application:
 
         return artist[idx:]
 
-    def accept_cookies(self) -> None:
-        """Clicks on Google's 'accept cookies' button if it pops up"""
-        try:
-            cookie_button = self.driver.find_element(By.ID, "L2AGLb")
-            cookie_button.click()
-        except:
+    def add_song_to_doc(self, song_data: dict, document) -> None:
+        """
+        Adds a song's title, artist and lyrics to the document
+        """
+
+        document.add_heading(song_data["title"].title())
+
+        if song_data["artist"]:
+            document.add_paragraph(song_data["artist"].title(), style="Subtitle")
+
+        if song_data["lyrics"]:
+            for paragraph in song_data["lyrics"]:
+                lines: ResultSet = paragraph.find_all("span", {"jsname": "YS01Ge"})
+                p = document.add_paragraph()
+                for line in lines:
+                    p.add_run(line.text)
+                    if line != lines[-1]:
+                        p.add_run("\n")
+        else:
+            document.add_paragraph().add_run(
+                "Lyrics Not Found"
+            ).font.color.rgb = RGBColor(255, 0, 0)
+
+            if song_data["link"]:
+                p = document.add_paragraph()
+                p.add_run(f"Try here: ")
+                helpers.add_hyperlink(p, song_data["link"], song_data["link"])
+
+    def save_as(self, *event) -> None:
+        """
+        Is called when the user clicks the 'Save as..' button.
+        Prompts the user to choose a save location and then saves the docx there.
+        When the file is saved, the user is asked whether they want to open the file.
+        """
+        filepath: str = self.choose_directory()
+
+        if filepath:
+            self.document.save(filepath)
+            self.display_reset()
+            self.ask_to_open_file(filepath)
+        else:
             return
 
     def choose_directory(self) -> str:

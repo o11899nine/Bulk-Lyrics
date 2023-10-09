@@ -1,12 +1,13 @@
-# Bulk Lyrics
-Input song titles and get a docx with all lyrics
+# Bulk Lyrics v1.0
+Input a list of songs and get a .docx document with all lyrics!
 
-Only tested with Chrome browser installed
+## Important notes
+### v1.0
+This version has only been tested on a Windows 10 machine with the Google Chrome browser installed.
 
-Features to add:
-Cancel button to stop the process
-Scroll bar
-Make UI prettier
-
-Known bugs:
-Might not always ask to open document
+## Features to add:
+- Cancel button
+- Scroll bar
+- Prettier UI with custom icons and instructions
+- Make it a .exe
+- Browser compatibility
