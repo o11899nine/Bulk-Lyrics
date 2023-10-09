@@ -125,22 +125,16 @@ class Application:
         event.widget.tk_focusNext().focus()
         return "break"
 
-    def setup_driver(self) -> None:
+    def setup_driver(self) -> webdriver.Chrome:
         """
-        Shows a loading text and calls the initiate_driver function
+        Sets up a Selenium Chrome webdriver
         """
         self.update_status_display("Initiating driver...\n")
-        self.driver = self.initiate_driver()
-
-    def initiate_driver(self) -> webdriver.Chrome:
-        """
-        Sets up and returns the Selenium Chrome webdriver
-        """
         options = Options()
         options.page_load_strategy = "eager"
         options.add_argument("--headless")
         options.add_experimental_option("excludeSwitches", ["enable-logging"])
-        return webdriver.Chrome(options=options)
+        self.driver = webdriver.Chrome(options=options)
 
     def setup_document(self) -> None:
         """
