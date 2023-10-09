@@ -1,34 +1,4 @@
 import docx
-import os
-import threading
-from tkinter import messagebox, filedialog
-
-def choose_directory() -> str:
-    """
-    Prompts the user to choose a save location for the docx file.
-    Returns the chosen save location (path) as a string if the user has succeeded.
-    """
-    filetypes: list = [("Word-document", "*.docx")]
-    path = None
-
-    try:
-        path = filedialog.asksaveasfile(
-            filetypes=filetypes,
-            defaultextension=filetypes,
-            initialfile="Bulk Lyrics",
-        )
-    except PermissionError:
-        messagebox.showwarning(
-            title="Access Denied",
-            message="Access denied.\nClose the document if it's open and try again.",
-        )
-        choose_directory()
-        
-    if path:
-        return path.name
-    else:
-        return None
-
 
 def add_hyperlink(paragraph, text: str, url: str) -> None:
     """
@@ -94,24 +64,3 @@ def get_or_create_hyperlink_style(d) -> str:
     return "Hyperlink"
 
 
-def ask_to_open_file(path: str) -> None:
-    """
-    Asks the user to open a saved file or not.
-    If yes, starts a thread to open the file.
-    """
-    open_file_response = messagebox.askyesno(
-        title="Document saved",
-        message=f"Document saved.\nDo you want to open it right now?",
-    )
-
-    
-    if open_file_response:
-        open_file_thread = threading.Thread(target=open_file, args=(path,))
-        open_file_thread.start()
-        
-
-def open_file(path: str):
-    """
-    Opens a file at path location
-    """
-    os.system('"' + path + '"')
