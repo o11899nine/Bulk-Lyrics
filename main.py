@@ -5,8 +5,6 @@
 # If a song's lyrics are not found, a link to the first google
 # hit for that song's lyrics is saved and displayed in the document.
 
-# TODO: readme
-
 import re
 import os
 import threading
