@@ -11,12 +11,8 @@ import threading
 import tkinter as tk
 from tkinter import messagebox, filedialog, StringVar
 
+import requests
 from bs4 import BeautifulSoup, ResultSet
-
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-
 from docx import Document
 from docx.shared import RGBColor, Cm, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -67,7 +63,6 @@ class Application:
             return
 
         self.display_running()
-        self.setup_driver()
         self.setup_document()
         self.generate_document()
         self.display_finished()
@@ -123,17 +118,6 @@ class Application:
         event.widget.tk_focusNext().focus()
         return "break"
 
-    def setup_driver(self) -> webdriver.Chrome:
-        """
-        Sets up a Selenium Chrome webdriver
-        """
-        self.update_status_display("Initiating driver...\n")
-        options = Options()
-        options.page_load_strategy = "eager"
-        options.add_argument("--headless")
-        options.add_experimental_option("excludeSwitches", ["enable-logging"])
-        self.driver = webdriver.Chrome(options=options)
-
     def setup_document(self) -> None:
         """
         Shows a loading text, initiates the docx and calls the format_document function
@@ -180,17 +164,20 @@ class Application:
         For each song, webscrapes Google for the lyrics.
         Then, adds the song and lyrics to the docx and adds a page break.
         """
+
         songlist: list = self.get_songlist()
 
         percentage_per_song: float = 100 / len(songlist)
         total_progress_percentage: int = 0
+
+        headers = self.start_request()
 
         for idx, song in enumerate(songlist):
             self.update_status_display(
                 f"{round(total_progress_percentage)}% completed\n{song}"
             )
 
-            soup: BeautifulSoup = self.fetch_song_soup(song, self.driver)
+            soup: BeautifulSoup = self.fetch_song_soup(song, headers)
             song_data: dict = self.extract_song_data(song, soup)
 
             self.add_song_to_doc(song_data, self.document)
@@ -200,6 +187,25 @@ class Application:
                 self.document.add_page_break()
 
             total_progress_percentage += percentage_per_song
+
+    def start_request(self):
+        """
+        Sets up a session for webscraping Google search results,
+        Gets cookies,
+        Returns the HTTP headers for use in fetch_song_soup function
+        """
+        # Set headers to mimic a web browser
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36",
+        }
+
+        # Create a session to handle cookies
+        session = requests.Session()
+
+        # Send an initial request to Google to get cookies
+        session.get("https://www.google.com", headers=headers)
+
+        return headers
 
     def get_songlist(self) -> list:
         """
@@ -213,23 +219,17 @@ class Application:
 
         return songlist
 
-    def fetch_song_soup(self, song: str, driver) -> BeautifulSoup:
+    def fetch_song_soup(self, song: str, headers) -> BeautifulSoup:
         """
         Searches Google for a song's lyrics and returns a BeautifulSoup of
         the search results page's html.
         """
-        driver.get(f"https://google.com/search?q={song} lyrics")
-        self.accept_cookies()
-        html: str = driver.page_source
-        return BeautifulSoup(html, "lxml")
 
-    def accept_cookies(self) -> None:
-        """Clicks on Google's 'accept cookies' button if it pops up"""
-        try:
-            cookie_button = self.driver.find_element(By.ID, "L2AGLb")
-            cookie_button.click()
-        except:
-            return
+        page = requests.get(
+            f"https://google.com/search?q={song} lyrics", headers=headers
+        )
+        html: str = page.text
+        return BeautifulSoup(html, "lxml")
 
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
         """
