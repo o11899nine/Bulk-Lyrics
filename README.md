@@ -1,4 +1,4 @@
-# Bulk Lyrics v1.0
+# Bulk Lyrics v1.1
 Input a list of songs and get a .docx document with all lyrics!
 
 ## Release notes
