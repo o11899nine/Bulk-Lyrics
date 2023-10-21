@@ -224,13 +224,14 @@ class Application:
         Searches Google for a song's lyrics and returns a BeautifulSoup of
         the search results page's html.
         """
-
+        query = re.sub('[^a-zA-Z0-9\n\.]', ' ', song)
         page = requests.get(
-            f"https://google.com/search?q={song} lyrics", headers=headers
+            f"https://google.com/search?q={query} lyrics", headers=headers
         )
         html: str = page.text
         return BeautifulSoup(html, "lxml")
 
+    
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
         """
         Finds a song's title, artist and lyrics in the song's BeautifulSoup and
