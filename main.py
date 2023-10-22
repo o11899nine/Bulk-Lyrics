@@ -263,7 +263,6 @@ class Application:
         else:
             title: str = soup.find("div", {"data-attrid": "title"}).text
             artist: str = soup.find("div", {"data-attrid": "subtitle"}).text
-            artist = self.delete_extra_text(artist)
 
         try:
             first_google_hit: str = soup.find("a", {"jsname": "UWckNb"})["href"]
@@ -279,19 +278,6 @@ class Application:
 
         return song_data
 
-    def delete_extra_text(self, artist: str) -> str:
-        """Deletes the words 'Song by' before the artist. Then returns the artist."""
-        # Google displays the artist as "Song by Artist", so the second uppercase
-        # letter is the start of the artist's name. The code below finds the index
-        # of that second uppercase letter and then removes all text before it
-        m: re.Match = re.search(r"^([^A-Z]*[A-Z]){2}", artist)
-        try:
-            idx: int = m.span()[1] - 1
-        except:
-            return "Unknown Artist"
-
-        return artist[idx:]
-
     def add_song_to_doc(self, song_data: dict, document) -> None:
         """
         Adds a song's title, artist and lyrics to the document
@@ -300,7 +286,7 @@ class Application:
         document.add_heading(song_data["title"].title())
 
         if song_data["artist"]:
-            document.add_paragraph(song_data["artist"].title(), style="Subtitle")
+            document.add_paragraph(song_data["artist"], style="Subtitle")
 
         if song_data["lyrics"]:
             for paragraph in song_data["lyrics"]:
