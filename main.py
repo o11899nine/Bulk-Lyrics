@@ -167,7 +167,7 @@ class Application:
 
         songlist: list = self.get_songlist()
 
-        percentage_per_song: float = 100 / len(songlist)
+        progess_percentage_per_song: float = 100 / len(songlist)
         total_progress_percentage: int = 0
 
         headers = self.start_request()
@@ -186,7 +186,7 @@ class Application:
             if idx != len(songlist) - 1:
                 self.document.add_page_break()
 
-            total_progress_percentage += percentage_per_song
+            total_progress_percentage += progess_percentage_per_song
 
     def start_request(self):
         """
@@ -224,14 +224,29 @@ class Application:
         Searches Google for a song's lyrics and returns a BeautifulSoup of
         the search results page's html.
         """
-        query = re.sub('[^a-zA-Z0-9\n\.]', ' ', song)
+        query = self.replace_symbols_by_hex_value(song)
         page = requests.get(
             f"https://google.com/search?q={query} lyrics", headers=headers
         )
         html: str = page.text
         return BeautifulSoup(html, "lxml")
 
-    
+
+    def replace_symbols_by_hex_value(self, string: str) -> str:
+        """
+        Takes a string and replaces all special symbols by their
+        hex value with % in front of it. e.g. '&' becomes '%26'.
+        This makes sure the Google search won't lead to issues where
+        a special symbol is used in the URL
+        """
+        for character in string:
+            if not (character.isalnum() or character == ' '):
+                hex_value: int = format(ord(character), "x")
+                string = string.replace(character, f'%{hex_value}')
+
+        return string
+
+
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
         """
         Finds a song's title, artist and lyrics in the song's BeautifulSoup and

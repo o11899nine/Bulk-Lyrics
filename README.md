@@ -4,6 +4,7 @@ Input a list of songs and get a .docx document with all lyrics!
 ## Release notes
 ### v1.1 (current)
 - Now using requests module to webscrape instead of selenium
+- Fixed Bug where special symbols in artist/song name caused a google query issue
 
 ### v1.0
 - This version has only been tested on a Windows 10 machine with the Google Chrome browser installed.
@@ -15,6 +16,6 @@ Input a list of songs and get a .docx document with all lyrics!
 - Make it a .exe
 
 ## Bugs to address
-- '&' symbol in song makes google search not work. 
-This is due to the fact that google uses the '&' symbol in the url of the search. 
-Same issue will probably arise with other symbols as well
+- delete_extra_text function deletes too much sometimes
+- user is not prompted to open file when choosing directory on the second attempt
+instead of the first
