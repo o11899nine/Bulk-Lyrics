@@ -27,7 +27,7 @@ class Application:
         self.root.geometry("600x600")
 
         placeholder: str = (
-            "Nirvana - Smells Like Teen Spirit\nBohemian Rhapsody\nThe Beatles Hey Jude"
+            "The Beatles Hey Jude\n1+1 Beyoncé"
         )
 
         self.textbox = tk.Text(self.root, height=20, width=50, font=("", 12), undo=True)
@@ -249,7 +249,7 @@ class Application:
 
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
         """
-        Finds a song's title, artist and lyrics in the song's BeautifulSoup and
+        Finds a song's title and lyrics in the song's BeautifulSoup and
         returns a dict with that info. If a song's lyrics are not found, the user's
         input is used for the song's title and google's first hit for the song's
         lyrics is stored in the dict
@@ -258,11 +258,9 @@ class Application:
 
         if len(lyrics) == 0:
             title: str = song
-            artist: bool = False
             lyrics: bool = False
         else:
             title: str = soup.find("div", {"data-attrid": "title"}).text
-            artist: str = soup.find("div", {"data-attrid": "subtitle"}).text
 
         try:
             first_google_hit: str = soup.find("a", {"jsname": "UWckNb"})["href"]
@@ -271,7 +269,6 @@ class Application:
 
         song_data: dict = {
             "title": title,
-            "artist": artist,
             "lyrics": lyrics,
             "link": first_google_hit,
         }
@@ -280,13 +277,11 @@ class Application:
 
     def add_song_to_doc(self, song_data: dict, document) -> None:
         """
-        Adds a song's title, artist and lyrics to the document
+        Adds a song's title and lyrics to the document
         """
 
         document.add_heading(song_data["title"].title())
-
-        if song_data["artist"]:
-            document.add_paragraph(song_data["artist"], style="Subtitle")
+        document.add_paragraph()
 
         if song_data["lyrics"]:
             for paragraph in song_data["lyrics"]:

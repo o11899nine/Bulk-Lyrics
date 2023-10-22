@@ -16,8 +16,9 @@ Input a list of songs and get a .docx document with all lyrics!
 - Make it a .exe
 
 ## Bugs to address
-- delete_extra_text function deletes too much sometimes (with Alt-J for instance)
 - user is not prompted to open file when choosing directory on the second attempt
 instead of the first
+- threading with opening doc
+- first title in doc is lower on page than others titles
 - "Circa Waves - T-Shirt Weather" gives lyrics, but unknown artist in doc
 - "1+1 - Beyoncé" gives lyrics, but unknown artist in doc
