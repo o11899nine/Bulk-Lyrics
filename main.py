@@ -214,8 +214,8 @@ class Application:
         """
         songlist: str = self.textbox.get("1.0", tk.END)
         songlist: list = songlist.replace("\r", "").replace('"', "").split("\n")
-        # Remove redundant spaces and empty strings
-        songlist = [re.sub(" +", " ", song).strip() for song in songlist if song]
+        # Remove redundant whitespace and empty strings
+        songlist = [re.sub(r"\s+", " ", song).strip() for song in songlist if song]
 
         return songlist
 
@@ -260,7 +260,10 @@ class Application:
             title: str = song
             lyrics: bool = False
         else:
-            title: str = soup.find("div", {"data-attrid": "title"}).text
+            try:
+                title: str = soup.find("div", {"data-attrid": "title"}).text
+            except AttributeError:
+                title: str = song
 
         try:
             first_google_hit: str = soup.find("a", {"jsname": "UWckNb"})["href"]
