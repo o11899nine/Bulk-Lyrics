@@ -19,3 +19,5 @@ Input a list of songs and get a .docx document with all lyrics!
 - delete_extra_text function deletes too much sometimes
 - user is not prompted to open file when choosing directory on the second attempt
 instead of the first
+- "Circa Waves - T-Shirt Weather" gives lyrics, but unknown artist in doc
+- "1+1 - Beyoncé" gives lyrics, but unknown artist in doc
