@@ -226,7 +226,7 @@ class Application:
         """
         query = self.replace_symbols_by_hex_value(song)
         page = requests.get(
-            f"https://google.com/search?q={query} lyrics", headers=headers
+            f"https://google.com/search?q={query} lyrics&hl=en", headers=headers
         )
         html: str = page.text
         return BeautifulSoup(html, "lxml")
@@ -249,7 +249,7 @@ class Application:
 
     def extract_song_data(self, song: str, soup: BeautifulSoup) -> dict:
         """
-        Finds a song's title and lyrics in the song's BeautifulSoup and
+        Finds a song's title, artist and lyrics in the song's BeautifulSoup and
         returns a dict with that info. If a song's lyrics are not found, the user's
         input is used for the song's title and google's first hit for the song's
         lyrics is stored in the dict
@@ -259,11 +259,18 @@ class Application:
         if len(lyrics) == 0:
             title: str = song
             lyrics: bool = False
+            artist: bool = False
         else:
             try:
                 title: str = soup.find("div", {"data-attrid": "title"}).text
             except AttributeError:
                 title: str = song
+            try:
+                artist: str = soup.find("div", {"data-attrid": "subtitle"}).text
+            except AttributeError:
+                artist: bool = False
+            if artist[0:7] == "Song by":
+                artist = artist[8:]          
 
         try:
             first_google_hit: str = soup.find("a", {"jsname": "UWckNb"})["href"]
@@ -274,17 +281,20 @@ class Application:
             "title": title,
             "lyrics": lyrics,
             "link": first_google_hit,
+            "artist": artist
         }
 
         return song_data
 
     def add_song_to_doc(self, song_data: dict, document) -> None:
         """
-        Adds a song's title and lyrics to the document
+        Adds a song's title, artist and lyrics to the document
         """
 
         document.add_heading(song_data["title"].title())
-        document.add_paragraph()
+        
+        if song_data["artist"]:
+            document.add_paragraph(song_data["artist"], style="Subtitle")
 
         if song_data["lyrics"]:
             for paragraph in song_data["lyrics"]:
