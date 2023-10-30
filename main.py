@@ -27,7 +27,7 @@ class Application:
         self.root.geometry("600x600")
 
         placeholder: str = (
-            "The Beatles Hey Jude\n1+1 Beyoncé"
+            "The Beatles Hey Jude\nEverlong - Foo Fighters\nBohemian Rhapsody"
         )
 
         self.textbox = tk.Text(self.root, height=20, width=50, font=("", 12), undo=True)
